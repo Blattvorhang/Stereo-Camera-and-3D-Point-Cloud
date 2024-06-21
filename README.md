@@ -46,4 +46,44 @@ Calculate depth from disparity with `cv::reprojectImageTo3D()`
 9. Triangulation to get the 3D point cloud
 
 ## UML
-![](./stereo_system.png)
+```mermaid
+classDiagram
+    class Camera {
+        -Eigen::Matrix3f intrinsicMatrix
+        -Eigen::Matrix4f extrinsicMatrix
+        -cv::Mat distortionCoeffs
+        +cv::Mat captureImage()
+    }
+
+    class StereoCameraSystem {
+        -Camera leftCamera
+        -Camera rightCamera
+        -cv::Mat stereoRectificationMap1
+        -cv::Mat stereoRectificationMap2
+        -Eigen::Matrix4f projectionMatrix1
+        -Eigen::Matrix4f projectionMatrix2
+        +StereoCameraSystem(Camera left, Camera right)
+        +void calibrate()
+        +std::pair<cv::Mat, cv::Mat> rectifyImages(cv::Mat leftImage, cv::Mat rightImage)
+        +cv::Mat generateDisparityMap(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method)
+        +cv::Mat generateDepthMap(cv::Mat disparityMap)
+    }
+
+    class FeatureMatcher {
+        +std::vector<cv::KeyPoint> detectFeatures(cv::Mat image)
+        +std::vector<cv::DMatch> matchFeatures(cv::Mat leftImage, cv::Mat rightImage)
+    }
+
+    class DisparityMapGenerator {
+        +cv::Mat computeDisparity(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method)
+    }
+
+    class DepthMapGenerator {
+        +cv::Mat computeDepth(cv::Mat disparityMap, Eigen::Matrix4f Q)
+    }
+
+    StereoCameraSystem --> Camera
+    StereoCameraSystem --> FeatureMatcher
+    StereoCameraSystem --> DisparityMapGenerator
+    StereoCameraSystem --> DepthMapGenerator
+```
