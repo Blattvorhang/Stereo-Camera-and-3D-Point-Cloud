@@ -36,14 +36,17 @@ Calculate depth from disparity with `cv::reprojectImageTo3D()`
 
 ## Process
 1. Calibrate the stereo camera (intrinsic matrices)
-2. Rectify the stereo camera
+2. Rectify the stereo camera (lens distortion)
 3. Keypoint detection and matching
-4. Obtain the fundamental matrix $\mathbf{F}$ using the 8-point algorithm
-5. Compute the essential matrix $\mathbf{E}$
-6. Decompose the essential matrix $\mathbf{E}$ to get the rotation matrix $\mathbf{R}$ and the translation vector $\mathbf{t}$
-7. Stereopsis
-8. Disparity map
-9. Triangulation to get the 3D point cloud
+4. Obtain the *fundamental matrix* $\mathbf{F}$ using the 8-point algorithm
+5. Compute the *essential matrix* $\mathbf{E}$
+6. Decompose the essential matrix $\mathbf{E}$ to get the *rotation matrix* $\mathbf{R}$ and the *translation vector* $\mathbf{t}$
+7. Stereo rectification
+8. Stereo matching (correspondence pair search on the same image row)
+   1. Block matching (BM)
+   2. Semi-global block matching (SGBM)
+9.  Disparity map (left and right image), optimization and refinement
+10. Triangulation to get the 3D point cloud
 
 ## UML
 ```mermaid
@@ -63,7 +66,6 @@ classDiagram
         -Eigen::Matrix4f projectionMatrix1
         -Eigen::Matrix4f projectionMatrix2
         +StereoCameraSystem(Camera left, Camera right)
-        +void calibrate()
         +std::pair<cv::Mat, cv::Mat> rectifyImages(cv::Mat leftImage, cv::Mat rightImage)
         +cv::Mat generateDisparityMap(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method)
         +cv::Mat generateDepthMap(cv::Mat disparityMap)
@@ -78,12 +80,7 @@ classDiagram
         +cv::Mat computeDisparity(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method)
     }
 
-    class DepthMapGenerator {
-        +cv::Mat computeDepth(cv::Mat disparityMap, Eigen::Matrix4f Q)
-    }
-
     StereoCameraSystem --> Camera
     StereoCameraSystem --> FeatureMatcher
     StereoCameraSystem --> DisparityMapGenerator
-    StereoCameraSystem --> DepthMapGenerator
 ```
