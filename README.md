@@ -48,6 +48,14 @@ Calculate depth from disparity with `cv::reprojectImageTo3D()`
 9.  Disparity map (left and right image), optimization and refinement
 10. Triangulation to get the 3D point cloud
 
+## Debug Images
+1. Original images
+2. Rectified images
+3. Disparity map
+4. Depth map
+5. 3D point cloud
+6. 3D point cloud with color
+
 ## UML
 ```mermaid
 classDiagram
@@ -66,6 +74,7 @@ classDiagram
         -Eigen::Matrix4f projectionMatrix1
         -Eigen::Matrix4f projectionMatrix2
         +StereoCameraSystem(Camera left, Camera right)
+        +void calibrate()
         +std::pair<cv::Mat, cv::Mat> rectifyImages(cv::Mat leftImage, cv::Mat rightImage)
         +cv::Mat generateDisparityMap(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method)
         +cv::Mat generateDepthMap(cv::Mat disparityMap)
