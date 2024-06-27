@@ -4,7 +4,7 @@ int main()
 {
   try
   {
-    std::cout << "World!\n" << std::endl;
+    std::cout << "Hello World!\n" << std::endl;
   }
   catch (const std::exception& e)
   {
