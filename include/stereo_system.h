@@ -20,6 +20,8 @@ private:
     int camera_id_;
     int single_camera_width_;
     int single_camera_height_;
+    cv::Mat cameraMatrixL, distCoeffsL, cameraMatrixR, distCoeffsR;
+    cv::Mat R, T;
 };
 
 #endif // STEREO_SYSTEM_H

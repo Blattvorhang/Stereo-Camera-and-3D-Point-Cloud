@@ -16,14 +16,12 @@ StereoSystem::StereoSystem(const std::string &data_path)
     cv::FileStorage fs(filepath.str(), cv::FileStorage::READ);
 
     // Read the camera matrices and distortion coefficients.
-    cv::Mat cameraMatrixL, distCoeffsL, cameraMatrixR, distCoeffsR;
     fs["cameraMatrixL"] >> cameraMatrixL;
     fs["distCoeffsL"] >> distCoeffsL;
     fs["cameraMatrixR"] >> cameraMatrixR;
     fs["distCoeffsR"] >> distCoeffsR;
 
     // Read the rotation and translation matrices.
-    cv::Mat R, T;
     fs["R"] >> R;
     fs["T"] >> T;
 
@@ -50,8 +48,8 @@ void StereoSystem::run()
         throw std::runtime_error("Could not open camera.");
     }
 
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280 * 2);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+    cap.set(cv::CAP_PROP_FRAME_WIDTH, single_camera_width_ * 2);
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT, single_camera_height_);
 
     // Assuming cap is your cv::VideoCapture object
     double width = cap.get(cv::CAP_PROP_FRAME_WIDTH);
@@ -60,6 +58,15 @@ void StereoSystem::run()
 
     cv::Mat frame;
     cv::Mat leftImage, rightImage;
+    cv::Mat R1, R2, P1, P2, Q;
+    cv::Mat rectMapL1, rectMapL2, rectMapR1, rectMapR2;
+    cv::Mat rectLeft, rectRight;
+    
+    cv::stereoRectify(cameraMatrixL, distCoeffsL,
+                        cameraMatrixR, distCoeffsR,
+                        cv::Size(single_camera_width_, single_camera_height_),
+                        R, T, R1, R2, P1, P2, Q,
+                        cv::CALIB_ZERO_DISPARITY, 1, cv::Size(single_camera_width_, single_camera_height_));
 
     while (true)
     {
@@ -73,6 +80,21 @@ void StereoSystem::run()
         // Show left and right images.
         cv::imshow("Left", leftImage);
         cv::imshow("Right", rightImage);
+
+        // Rectify the images.
+        cv::initUndistortRectifyMap(cameraMatrixL, distCoeffsL, R1, P1,
+                                    cv::Size(single_camera_width_, single_camera_height_),
+                                    CV_32FC1, rectMapL1, rectMapL2);
+        cv::initUndistortRectifyMap(cameraMatrixR, distCoeffsR, R2, P2,
+                                    cv::Size(single_camera_width_, single_camera_height_),
+                                    CV_32FC1, rectMapR1, rectMapR2);
+        
+        cv::remap(leftImage, rectLeft, rectMapL1, rectMapL2, cv::INTER_LINEAR);
+        cv::remap(rightImage, rectRight, rectMapR1, rectMapR2, cv::INTER_LINEAR);
+
+        // Show rectified images.
+        cv::imshow("Rectified Left", rectLeft);
+        cv::imshow("Rectified Right", rectRight);
 
         // Update the windows.
         cv::waitKey(1);

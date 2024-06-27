@@ -39,7 +39,7 @@ Calculate depth from disparity with `cv::reprojectImageTo3D()`
    1. Intrinsic matrices $\mathbf{K}_L$ and $\mathbf{K}_R$
    2. Obtain the *fundamental matrix* $\mathbf{F}$ using the 8-point algorithm
    3. Compute the *essential matrix* $\mathbf{E}$
-   4. Decompose the essential matrix $\mathbf{E}$ to get the *rotation matrix* $\mathbf{R}$ and the *translation vector* $\mathbf{t}$
+   4. Decompose the essential matrix $\mathbf{E}$ to get the *rotation matrix* $\mathbf{R}$ and the *translation vector* $\mathbf{t}$ ($\mathbf{p}_R^C = \mathbf{R}\mathbf{p}_L^C+\mathbf{t}$)
 2. Rectify the stereo camera (lens undistortion and stereo rectification)
 3. Stereo matching (correspondence pair search on the same image row)
    1. Block matching (BM)
@@ -92,3 +92,7 @@ classDiagram
     StereoSystem --> FeatureMatcher
     StereoSystem --> DisparityMapGenerator
 ```
+
+## References
+- [Stereo Camera Calibration (from MATLAB to OpenCV)](https://zhuanlan.zhihu.com/p/153329285)
+- [Stereo Camera Calibration](https://www.cnblogs.com/champrin/p/17034043.html)

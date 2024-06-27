@@ -1,10 +1,14 @@
-cameraMatrix1 = stereoParams.CameraParameters1.IntrinsicMatrix';
-cameraMatrix2 = stereoParams.CameraParameters2.IntrinsicMatrix';
-distCoeffs1 = [stereoParams.CameraParameters1.RadialDistortion, stereoParams.CameraParameters1.TangentialDistortion];
-distCoeffs2 = [stereoParams.CameraParameters2.RadialDistortion, stereoParams.CameraParameters2.TangentialDistortion];
-% k_3 = 0
-distCoeffs1(5) = 0;
-distCoeffs2(5) = 0;
+K1 = stereoParams.CameraParameters1.IntrinsicMatrix';
+K2 = stereoParams.CameraParameters2.IntrinsicMatrix';
+
+RD1 = stereoParams.CameraParameters1.RadialDistortion;
+TD1 = stereoParams.CameraParameters1.TangentialDistortion;
+distCoeffs1 = [RD1(1), RD1(2), TD1(1), TD1(2), 0];
+
+RD2 = stereoParams.CameraParameters2.RadialDistortion;
+TD2 = stereoParams.CameraParameters2.TangentialDistortion;
+distCoeffs2 = [RD2(1), RD2(2), TD2(1), TD2(2), 0];
+
 R = stereoParams.RotationOfCamera2';
 T = stereoParams.TranslationOfCamera2';
 
