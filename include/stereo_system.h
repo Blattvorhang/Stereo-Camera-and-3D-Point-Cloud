@@ -3,15 +3,15 @@
 
 #include <string>
 
-/// \brief Main Lab program.
+/// \brief Whole stereo system class.
 class StereoSystem
 {
 public:
-    /// \brief Constructs the lab.
+    /// \brief Constructs a stereo system object.
     /// \param data_path Optional path to parameter files.
-    explicit StereoSystem(const std::string &data_path = "../param/");
+    explicit StereoSystem(const std::string &data_path = "../calibration/");
 
-    /// \brief Runs the lab.
+    /// \brief Runs the stereo system.
     void run();
 
 private:

@@ -1,11 +1,41 @@
 #include "../include/stereo_system.h"
+#include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 
 StereoSystem::StereoSystem(const std::string &data_path)
-    : data_path_{data_path}, window_name_{"World point in camera"}
-{}
+    : data_path_{data_path}
+    , window_name_{"Stereo System"}
+    , camera_id_{0}
+    , single_camera_width_{1280}
+    , single_camera_height_{720}
+{
+    std::stringstream filepath;
+    filepath << data_path << "calib_param.yml";
+    cv::FileStorage fs(filepath.str(), cv::FileStorage::READ);
+
+    // Read the camera matrices and distortion coefficients.
+    cv::Mat cameraMatrixL, distCoeffsL, cameraMatrixR, distCoeffsR;
+    fs["cameraMatrixL"] >> cameraMatrixL;
+    fs["distCoeffsL"] >> distCoeffsL;
+    fs["cameraMatrixR"] >> cameraMatrixR;
+    fs["distCoeffsR"] >> distCoeffsR;
+
+    // Read the rotation and translation matrices.
+    cv::Mat R, T;
+    fs["R"] >> R;
+    fs["T"] >> T;
+
+    std::cout << "cameraMatrixL: " << cameraMatrixL << std::endl;
+    std::cout << "distCoeffsL: " << distCoeffsL << std::endl;
+    std::cout << "cameraMatrixR: " << cameraMatrixR << std::endl;
+    std::cout << "distCoeffsR: " << distCoeffsR << std::endl;
+    std::cout << "R: " << R << std::endl;
+    std::cout << "T: " << T << std::endl;
+
+    fs.release();
+}
 
 void StereoSystem::run()
 {
