@@ -35,18 +35,19 @@ Calculate depth from disparity with `cv::reprojectImageTo3D()`
 3. Try other algorithms to improve speed/accuracy/quality of depth map
 
 ## Process
-1. Calibrate the stereo camera (intrinsic matrices)
+1. Calibrate the stereo camera (using MATLAB)
+   1. Intrinsic matrices $\mathbf{K}_L$ and $\mathbf{K}_R$
+   2. Obtain the *fundamental matrix* $\mathbf{F}$ using the 8-point algorithm
+   3. Compute the *essential matrix* $\mathbf{E}$
+   4. Decompose the essential matrix $\mathbf{E}$ to get the *rotation matrix* $\mathbf{R}$ and the *translation vector* $\mathbf{t}$
 2. Rectify the stereo camera (lens distortion)
 3. Keypoint detection and matching
-4. Obtain the *fundamental matrix* $\mathbf{F}$ using the 8-point algorithm
-5. Compute the *essential matrix* $\mathbf{E}$
-6. Decompose the essential matrix $\mathbf{E}$ to get the *rotation matrix* $\mathbf{R}$ and the *translation vector* $\mathbf{t}$
-7. Stereo rectification
-8. Stereo matching (correspondence pair search on the same image row)
+4. Stereo rectification
+5. Stereo matching (correspondence pair search on the same image row)
    1. Block matching (BM)
    2. Semi-global block matching (SGBM)
-9.  Disparity map (left and right image), optimization and refinement
-10. Triangulation to get the 3D point cloud
+6.  Disparity map (left and right image), optimization and refinement
+7.  Triangulation to get the 3D point cloud
 
 ## Debug Images
 1. Original images
