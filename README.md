@@ -65,7 +65,7 @@ classDiagram
         +cv::Mat captureImage()
     }
 
-    class StereoCameraSystem {
+    class StereoSystem {
         -Camera leftCamera
         -Camera rightCamera
         -cv::Mat stereoRectificationMap1
