@@ -2,7 +2,9 @@ cmake_minimum_required( VERSION 3.5.1 )
 
 project(stereo_camera)
 
-  
+# set the C++ standard to C++ 14
+set(CMAKE_CXX_STANDARD 14)
+
 # Find libraries
 find_package(OpenCV 4.9.0 REQUIRED)
 find_package(Sophus REQUIRED)
@@ -18,6 +20,7 @@ include_directories(/usr/local/include/eigen3)
 add_executable(${PROJECT_NAME}
     src/main.cpp
     src/intrinsics.cpp
+    src/stereo_system.cpp
 )
 
 # add the include directory
