@@ -17,6 +17,9 @@ public:
 private:
     std::string data_path_;
     std::string window_name_;
+    int camera_id_;
+    int single_camera_width_;
+    int single_camera_height_;
 };
 
 #endif // STEREO_SYSTEM_H

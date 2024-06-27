@@ -1,4 +1,4 @@
-#include "intrinsics.h"
+#include "../include/intrinsics.h"
 
 Eigen::Matrix3d Intrinsics::toCalibrationMatrix()
 {

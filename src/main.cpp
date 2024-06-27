@@ -1,11 +1,11 @@
 #include <iostream>
-#include "stereo_system.h"
+#include "../include/stereo_system.h"
 
 int main()
 {
     try
     {
-        StereoSystem stereo_system{};
+        StereoSystem stereo_system;
         stereo_system.run();
     }
     catch (const std::exception &e)
