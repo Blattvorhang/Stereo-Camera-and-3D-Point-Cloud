@@ -12,6 +12,9 @@ distCoeffs2 = [RD2(1), RD2(2), TD2(1), TD2(2), 0];
 R = stereoParams.RotationOfCamera2';
 T = stereoParams.TranslationOfCamera2';
 
+T = -R' * T;
+R = R'; 
+
 fileID = fopen('calib_param.yml', 'w');
 fprintf(fileID, '%%YAML:1.0\n');
 fprintf(fileID, 'cameraMatrixL: !!opencv-matrix\n');
