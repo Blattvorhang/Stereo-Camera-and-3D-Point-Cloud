@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+/build
 
 # Precompiled Headers
 *.gch
@@ -30,3 +31,11 @@
 *.exe
 *.out
 *.app
+
+# Config files
+.vscode
+.vs
+
+#vs
+/cv
+/out
