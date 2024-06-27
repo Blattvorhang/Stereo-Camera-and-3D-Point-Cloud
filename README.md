@@ -40,14 +40,12 @@ Calculate depth from disparity with `cv::reprojectImageTo3D()`
    2. Obtain the *fundamental matrix* $\mathbf{F}$ using the 8-point algorithm
    3. Compute the *essential matrix* $\mathbf{E}$
    4. Decompose the essential matrix $\mathbf{E}$ to get the *rotation matrix* $\mathbf{R}$ and the *translation vector* $\mathbf{t}$
-2. Rectify the stereo camera (lens distortion)
-3. Keypoint detection and matching
-4. Stereo rectification
-5. Stereo matching (correspondence pair search on the same image row)
+2. Rectify the stereo camera (lens distortion and stereo rectification)
+3. Stereo matching (correspondence pair search on the same image row)
    1. Block matching (BM)
    2. Semi-global block matching (SGBM)
-6.  Disparity map (left and right image), optimization and refinement
-7.  Triangulation to get the 3D point cloud
+4.  Disparity map (left and right image), optimization and refinement
+5.  Triangulation to get the 3D point cloud
 
 ## Debug Images
 1. Original images
