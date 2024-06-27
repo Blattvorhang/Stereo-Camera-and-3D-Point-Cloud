@@ -1,10 +1,12 @@
 #include <iostream>
+#include "opencv.hpp"
 
 int main()
 {
   try
   {
-    std::cout << "Hello World!\n" << std::endl;
+    std::cout << "World!\n" << std::endl;
+    cv::Mat scr = cv::imread("lena.jpg");
   }
   catch (const std::exception& e)
   {
