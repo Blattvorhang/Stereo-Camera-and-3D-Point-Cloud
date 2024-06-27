@@ -34,3 +34,8 @@
 
 # Config files
 .vscode
+.vs
+
+#vs
+/cv
+/out
