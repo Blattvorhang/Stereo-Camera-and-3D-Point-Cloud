@@ -5,32 +5,32 @@
 #include <opencv2/calib3d.hpp>
 
 DisparityMapGenerator::DisparityMapGenerator(const cv::Mat& leftImage, const cv::Mat& rightImage, DisparityMethod method) {
-	// ³õÊ¼»¯ÊÓ²î¼ÆËãÆ÷
+	// åˆå§‹åŒ–è§†å·®è®¡ç®—å™¨
     this->left_image_ = leftImage;
     this->right_image_ = rightImage;
     this->method_ = method;
 }
 
-// º¯Êı¶Ôµ¥¸öÍ¼Ïñ½øĞĞÔ¤´¦Àí
+// å‡½æ•°å¯¹å•ä¸ªå›¾åƒè¿›è¡Œé¢„å¤„ç†
 void DisparityMapGenerator::preprocessImage(cv::Mat& image, bool useGaussianBlur) {
-    // ½«Í¼Ïñ×ª»»Îª»Ò¶ÈÍ¼£¨Èç¹ûÉĞÎ´×ª»»£©
+    // å°†å›¾åƒè½¬æ¢ä¸ºç°åº¦å›¾ï¼ˆå¦‚æœå°šæœªè½¬æ¢ï¼‰
     if (image.channels() > 1) {
         cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
     }
 
-    // µ÷ÕûÍ¼Ïñ´óĞ¡µ½640x360
+    // è°ƒæ•´å›¾åƒå¤§å°åˆ°640x360
     cv::resize(image, image, cv::Size(640, 360));
 
-    // Ó¦ÓÃ¸ßË¹Ä£ºıÒÔ¼õÉÙÍ¼ÏñÔëÉù£¨Èç¹ûÆôÓÃ£©
+    // åº”ç”¨é«˜æ–¯æ¨¡ç³Šä»¥å‡å°‘å›¾åƒå™ªå£°ï¼ˆå¦‚æœå¯ç”¨ï¼‰
     if (useGaussianBlur) {
-        // Ê¹ÓÃ¸ü´óµÄ¸ßË¹ºËÔöÇ¿Ä£ºıĞ§¹û
+        // ä½¿ç”¨æ›´å¤§çš„é«˜æ–¯æ ¸å¢å¼ºæ¨¡ç³Šæ•ˆæœ
         cv::GaussianBlur(image, image, cv::Size(3, 3), 0);
     }
 
-    // Ö±·½Í¼¾ùºâ»¯ÒÔÔöÇ¿Í¼Ïñ¶Ô±È¶È
+    // ç›´æ–¹å›¾å‡è¡¡åŒ–ä»¥å¢å¼ºå›¾åƒå¯¹æ¯”åº¦
     cv::equalizeHist(image, image);
 
-    // ×ª»»Í¼Ïñ¸ñÊ½µ½8Î»ÎŞ·ûºÅÕûÊıÀàĞÍ£¨Èç¹ûÉĞÎ´×ª»»£©
+    // è½¬æ¢å›¾åƒæ ¼å¼åˆ°8ä½æ— ç¬¦å·æ•´æ•°ç±»å‹ï¼ˆå¦‚æœå°šæœªè½¬æ¢ï¼‰
     if (image.type() != CV_8U) {
         image.convertTo(image, CV_8U, 255.0);
     }
@@ -42,103 +42,54 @@ void DisparityMapGenerator::computeDisparity() {
     cv::imshow("preprocess Left", left_image_);
     cv::imshow("preprocess Right", right_image_);
     switch (method_) {
-    case SAD:
-        computeSAD();
-        break;
-    case SSD:
-        computeSSD();
-        break;
     case BM:
         computeBM();
         break;
     case SGBM:
         computeSGBM();
         break;
-        // ÆäËû·½·¨¿ÉÒÔ¸ù¾İĞèÒªÌí¼Ó
+        // å…¶ä»–æ–¹æ³•å¯ä»¥æ ¹æ®éœ€è¦æ·»åŠ 
+
     default:
         throw std::invalid_argument("Unsupported disparity method");
     }
 }
 
 void DisparityMapGenerator::displayDisparity() {
-    // ½«ÊÓ²îÍ¼´ÓCV_16S×ª»»µ½CV_8U
+    // å°†è§†å·®å›¾ä»CV_16Sè½¬æ¢åˆ°CV_8U
     cv::Mat disp8;
     double minVal, maxVal;
     cv::minMaxLoc(disparity_, &minVal, &maxVal);
     disparity_.convertTo(disp8, CV_8U, 255 / (maxVal - minVal), -minVal * 255 / (maxVal - minVal));
 
-    // Ó¦ÓÃÎ±²ÊÉ«Ó³ÉäÔöÇ¿ÊÓ¾õĞ§¹û
+    // åº”ç”¨ä¼ªå½©è‰²æ˜ å°„å¢å¼ºè§†è§‰æ•ˆæœ
     cv::Mat dispColor;
     cv::applyColorMap(disp8, dispColor, cv::COLORMAP_JET);
 
-    // Ó¦ÓÃË«±ßÂË²¨ÔöÇ¿ÊÓ²îÍ¼
+    // åº”ç”¨åŒè¾¹æ»¤æ³¢å¢å¼ºè§†å·®å›¾
     cv::Mat dispBilateral;
     cv::bilateralFilter(dispColor, dispBilateral, 9, 75, 75);
 
-    // ÏÔÊ¾´¦ÀíºóµÄÊÓ²îÍ¼
+    // æ˜¾ç¤ºå¤„ç†åçš„è§†å·®å›¾
     cv::namedWindow("Enhanced Disparity Map", cv::WINDOW_NORMAL);
     cv::imshow("Enhanced Disparity Map", dispBilateral);
 }
 
-
-void DisparityMapGenerator::computeSAD(int numDisparities, int blockSize) {
-    // ¼ÆËã¾ø¶Ô²îÒìºÍ£¨SAD£©ÊÓ²îÍ¼
-    disparity_ = cv::Mat(left_image_.size(), CV_8U, cv::Scalar(0));
-
-    // ¶ÔÓÚÃ¿¸öÏñËØ£¬ÔÚÔÊĞíµÄÊÓ²î·¶Î§ÄÚËÑË÷×î¼ÑÆ¥Åä
-    for (int y = blockSize / 2; y < left_image_.rows - blockSize / 2; ++y) {
-        for (int x = blockSize / 2; x < left_image_.cols - blockSize / 2; ++x) {
-            int minSAD = INT_MAX;
-            int bestDisparity = 0;
-            for (int d = 0; d < numDisparities; ++d) {
-                int SAD = 0;
-                if (x - d < blockSize / 2) continue;  // ±ÜÃâ×óÍ¼³¬³ö±ß½ç
-
-                for (int dy = -blockSize / 2; dy <= blockSize / 2; ++dy) {
-                    for (int dx = -blockSize / 2; dx <= blockSize / 2; ++dx) {
-                        int leftPixel = left_image_.at<uchar>(y + dy, x + dx);
-                        int rightX = x + dx - d;
-                        if (rightX < 0 || rightX >= right_image_.cols) continue; // ±ÜÃâÓÒÍ¼³¬³ö±ß½ç
-                        int rightPixel = right_image_.at<uchar>(y + dy, rightX);
-                        SAD += std::abs(leftPixel - rightPixel);
-                    }
-                }
-
-                if (SAD < minSAD) {
-                    minSAD = SAD;
-                    bestDisparity = d;
-                }
-            }
-            disparity_.at<uchar>(y, x) = static_cast<uchar>((bestDisparity * 255) / (numDisparities - 1)); // ¸Ä½øÊÓ²î¹éÒ»»¯
-        }
-    }
-}
-
-
-
-void DisparityMapGenerator::computeSSD() {
-    // ¼ÆËãÆ½·½²îÒì£¨SD£©ÊÓ²îÍ¼
-    cv::Mat disparity;
-    // SD·½·¨µÄÊµÏÖ
-    // TODO: ÊµÏÖSD·½·¨
-    this->disparity_ = disparity;
-}
-
 void DisparityMapGenerator::computeBM() {
-    // Ê¹ÓÃ¿éÆ¥Åä£¨Block Matching£©·½·¨¼ÆËãÊÓ²îÍ¼
+    // ä½¿ç”¨å—åŒ¹é…ï¼ˆBlock Matchingï¼‰æ–¹æ³•è®¡ç®—è§†å·®å›¾
     cv::Mat disparity;
-    int numDisparities = 16 * 5;  // ÊÓ²î·¶Î§
-    int blockSize = 15;  // ¿é´óĞ¡
+    int numDisparities = 16 * 5;  // è§†å·®èŒƒå›´
+    int blockSize = 15;  // å—å¤§å°
     cv::Ptr<cv::StereoBM> bm = cv::StereoBM::create(numDisparities, blockSize);
     bm->compute(left_image_, right_image_, disparity);
     this->disparity_ = disparity;
 }
 
 void DisparityMapGenerator::computeSGBM() {
-    // Ê¹ÓÃ°ëÈ«¾Ö¿éÆ¥Åä£¨Semi-Global Block Matching£©·½·¨¼ÆËãÊÓ²îÍ¼
+    // ä½¿ç”¨åŠå…¨å±€å—åŒ¹é…ï¼ˆSemi-Global Block Matchingï¼‰æ–¹æ³•è®¡ç®—è§†å·®å›¾
     cv::Mat disparity;
-    int numDisparities = 16 * 5;  // ÊÓ²î·¶Î§
-    int blockSize = 16;  // ¿é´óĞ¡
+    int numDisparities = 16 * 5;  // è§†å·®èŒƒå›´
+    int blockSize = 16;  // å—å¤§å°
     cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(0, numDisparities, blockSize);
     sgbm->compute(left_image_, right_image_, disparity);
     this->disparity_ = disparity;

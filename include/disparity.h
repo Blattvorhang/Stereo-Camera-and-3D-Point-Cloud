@@ -13,8 +13,6 @@ public:
     enum DisparityMethod {
         BM,
         SGBM,
-        SAD,
-        SSD,
         NCC,
         DP,
         GC,
@@ -24,7 +22,7 @@ public:
     };
     DisparityMapGenerator(const cv::Mat& leftImage, const cv::Mat& rightImage, DisparityMethod method);
     void computeDisparity();
-    void displayDisparity();  // ½«ÊÓ²îÍ¼¹éÒ»»¯²¢ÏÔÊ¾
+    void displayDisparity();  // å°†è§†å·®å›¾å½’ä¸€åŒ–å¹¶æ˜¾ç¤º
 private:
     cv::Mat left_image_;
     cv::Mat right_image_;
@@ -35,7 +33,7 @@ private:
     void computeBM();
     void computeSGBM();
     void preprocessImage(cv::Mat& image, bool useGaussianBlur = true);
-    // ÆäËû·½·¨¿ÉÒÔ¸ù¾İĞèÒªÌí¼Ó
+    // å…¶ä»–æ–¹æ³•å¯ä»¥æ ¹æ®éœ€è¦æ·»åŠ 
 };
 
 #endif // DISPARITY_H
