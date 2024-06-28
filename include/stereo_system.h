@@ -1,4 +1,4 @@
-#ifndef STEREO_SYSTEM_H
+﻿#ifndef STEREO_SYSTEM_H
 #define STEREO_SYSTEM_H
 
 #include <string>

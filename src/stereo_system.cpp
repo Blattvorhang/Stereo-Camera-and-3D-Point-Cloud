@@ -1,4 +1,4 @@
-#include <opencv2/opencv.hpp>
+﻿#include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <iostream>
@@ -141,7 +141,7 @@ void StereoSystem::run()
         // cv::imwrite("../test_imgs/rectified_left.png", rect_left);
         // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
-        DisparityMapGenerator disparity_map_generator(rect_left, rect_right, DisparityMapGenerator::SGBM);
+        DisparityMapGenerator disparity_map_generator(rect_left, rect_right, DisparityMapGenerator::SGM);
         disparity_map_generator.computeDisparity();
         disparity_map_generator.displayDisparity();
         

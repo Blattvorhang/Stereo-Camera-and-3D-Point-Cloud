@@ -1,4 +1,4 @@
-#ifndef DISPARITY_H
+﻿#ifndef DISPARITY_H
 #define DISPARITY_H
 
 #include <opencv2/opencv.hpp>
@@ -28,10 +28,10 @@ private:
     cv::Mat right_image_;
     cv::Mat disparity_;
     DisparityMethod method_;
-    void computeSAD(int numDisparities = 16 * 5, int blockSize = 5);
-    void computeSSD();
     void computeBM();
     void computeSGBM();
+    void computeNCC();
+    void computeSGM();
     void preprocessImage(cv::Mat& image, bool useGaussianBlur = true);
     // 其他方法可以根据需要添加
 };
