@@ -1,6 +1,7 @@
 ﻿#include "../include/disparity.h"
 #include "../include/semi_global_matching.h"
 #include <opencv2/calib3d.hpp>
+#include <opencv2/ximgproc/edge_filter.hpp>
 #include <chrono>
 using namespace std::chrono;
 
@@ -65,18 +66,54 @@ void DisparityMapGenerator::displayDisparity() {
     cv::minMaxLoc(disparity_, &minVal, &maxVal);
     disparity_.convertTo(disp8, CV_8U, 255 / (maxVal - minVal), -minVal * 255 / (maxVal - minVal));
 
+    // 计算积分图和对应的像素点个数图像
+    cv::Mat integralImage, pixelCount;
+    cv::integral(disp8, integralImage, pixelCount, CV_32S, CV_32S);
+
+    // 多层次均值滤波填充空洞
+    cv::Mat dispFilled = disp8.clone();
+    int windowSize = 128; // 初始较大窗口尺寸
+    while (windowSize >= 3) {
+        cv::Mat temp = dispFilled.clone();
+        for (int i = 0; i < dispFilled.rows; i++) {
+            for (int j = 0; j < dispFilled.cols; j++) {
+                if (dispFilled.at<uchar>(i, j) == 0) {
+                    int x1 = std::max(i - windowSize / 2, 0);
+                    int y1 = std::max(j - windowSize / 2, 0);
+                    int x2 = std::min(i + windowSize / 2, dispFilled.rows - 1);
+                    int y2 = std::min(j + windowSize / 2, dispFilled.cols - 1);
+
+                    int count = pixelCount.at<int>(x2 + 1, y2 + 1) - pixelCount.at<int>(x1, y2 + 1) - pixelCount.at<int>(x2 + 1, y1) + pixelCount.at<int>(x1, y1);
+                    if (count > 0) {
+                        int sum = integralImage.at<int>(x2 + 1, y2 + 1) - integralImage.at<int>(x1, y2 + 1) - integralImage.at<int>(x2 + 1, y1) + integralImage.at<int>(x1, y1);
+                        temp.at<uchar>(i, j) = sum / count;
+                    }
+                }
+            }
+        }
+        dispFilled = temp;
+        windowSize /= 2; // 缩小窗口尺寸
+    }
+
+    // 应用闭运算（膨胀后腐蚀）填充空洞
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7, 7));
+    cv::Mat dispClosed;
+    cv::morphologyEx(dispFilled, dispClosed, cv::MORPH_CLOSE, kernel);
+
+    // 应用引导滤波增强边缘
+    cv::Mat dispGuided;
+    cv::ximgproc::guidedFilter(dispClosed, dispClosed, dispGuided, 9, 75);
+
     // 应用伪彩色映射增强视觉效果
     cv::Mat dispColor;
-    cv::applyColorMap(disp8, dispColor, cv::COLORMAP_JET);
-
-    // 应用双边滤波增强视差图
-    cv::Mat dispBilateral;
-    cv::bilateralFilter(dispColor, dispBilateral, 9, 75, 75);
+    cv::applyColorMap(dispGuided, dispColor, cv::COLORMAP_JET);
 
     // 显示处理后的视差图
     cv::namedWindow("Enhanced Disparity Map", cv::WINDOW_NORMAL);
-    cv::imshow("Enhanced Disparity Map", dispBilateral);
+    cv::imshow("Enhanced Disparity Map", dispColor);
 }
+
+
 
 void DisparityMapGenerator::computeBM() {
     // 使用块匹配（Block Matching）方法计算视差图
@@ -91,65 +128,30 @@ void DisparityMapGenerator::computeBM() {
 void DisparityMapGenerator::computeSGBM() {
     // 使用半全局块匹配（Semi-Global Block Matching）方法计算视差图
     cv::Mat disparity;
-    int numDisparities = 16 * 5;  // 视差范围
-    int blockSize = 16;  // 块大小
+    int winSize = 10;
+    int numDisparities = ((left_image_.cols / 8) + 15) & -16;  // 视差搜索范围
+    int blockSize = winSize;  // 块大小
+
     cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(0, numDisparities, blockSize);
+    sgbm->setPreFilterCap(31);  // 预处理滤波器截断值
+    sgbm->setBlockSize(blockSize);  // SAD窗口大小
+    sgbm->setP1(8 * winSize * winSize);  // 控制视差平滑度第一参数
+    sgbm->setP2(32 * winSize * winSize);  // 控制视差平滑度第二参数
+    sgbm->setMinDisparity(0);  // 最小视差
+    sgbm->setNumDisparities(numDisparities);  // 视差搜索范围
+    sgbm->setUniquenessRatio(10);  // 视差唯一性百分比
+    sgbm->setSpeckleWindowSize(200);  // 检查视差连通区域变化度的窗口大小
+    sgbm->setSpeckleRange(1);  // 视差变化阈值
+    sgbm->setDisp12MaxDiff(0);  // 左右视差图最大容许差异
+    sgbm->setMode(cv::StereoSGBM::MODE_SGBM);  // 采用全尺寸双通道动态编程算法
+
     sgbm->compute(left_image_, right_image_, disparity);
     this->disparity_ = disparity;
 }
 
+
 void DisparityMapGenerator::computeNCC() {
-    int windowSize = 21;  // 窗口大小
-    int maxDisparity = 60;  // 最大视差
-    int halfWindowSize = windowSize / 2;
 
-    cv::Mat leftGray = left_image_.clone();
-    cv::Mat rightGray = right_image_.clone();
-
-    disparity_ = cv::Mat::zeros(leftGray.size(), CV_32F);
-
-    // 遍历图像
-    for (int y = halfWindowSize; y < leftGray.rows - halfWindowSize; ++y) {
-        for (int x = halfWindowSize; x < leftGray.cols - halfWindowSize; ++x) {
-            double maxNCC = -1.0;
-            int bestShift = 0;
-
-            // 左图的窗口
-            cv::Rect leftRect(x - halfWindowSize, y - halfWindowSize, windowSize, windowSize);
-            cv::Mat leftROI = leftGray(leftRect);
-            double leftMean = cv::mean(leftROI)[0];
-
-            for (int shift = 0; shift < maxDisparity; ++shift) {
-                int rightX = x + shift;
-                if (rightX + halfWindowSize >= rightGray.cols) break;
-
-                // 右图的窗口
-                cv::Rect rightRect(rightX - halfWindowSize, y - halfWindowSize, windowSize, windowSize);
-                cv::Mat rightROI = rightGray(rightRect);
-                double rightMean = cv::mean(rightROI)[0];
-
-                // 计算归一化互相关
-                double num = 0, den1 = 0, den2 = 0;
-                for (int dy = -halfWindowSize; dy <= halfWindowSize; ++dy) {
-                    for (int dx = -halfWindowSize; dx <= halfWindowSize; ++dx) {
-                        double lPixel = leftGray.at<uchar>(y + dy, x + dx) - leftMean;
-                        double rPixel = rightGray.at<uchar>(y + dy, rightX + dx) - rightMean;
-                        num += lPixel * rPixel;
-                        den1 += lPixel * lPixel;
-                        den2 += rPixel * rPixel;
-                    }
-                }
-                double den = sqrt(den1 * den2);
-                double ncc = (den == 0) ? 0 : num / den;
-
-                if (ncc > maxNCC) {
-                    maxNCC = ncc;
-                    bestShift = shift;
-                }
-            }
-            disparity_.at<float>(y, x) = static_cast<float>(bestShift);
-        }
-    }
 }
 
 void DisparityMapGenerator::computeSGM() {

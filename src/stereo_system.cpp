@@ -129,8 +129,10 @@ void StereoSystem::run()
             rectifyImages(ori_left, ori_right, rect_left, rect_right);
         } else { 
             // Load images from file.
-            rect_left = cv::imread("../test_imgs/rectified_left.png");
-            rect_right = cv::imread("../test_imgs/rectified_right.png");
+            /*rect_left = cv::imread("../test_imgs/rectified_left.png");
+            rect_right = cv::imread("../test_imgs/rectified_right.png");*/
+            rect_left = cv::imread("../test_imgs/im2.png");
+            rect_right = cv::imread("../test_imgs/im6.png");
         }
 
         // Show rectified images.
@@ -142,7 +144,7 @@ void StereoSystem::run()
         // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
         // TODO: Compute disparity map.
-        DisparityMapGenerator disparity_map_generator(rect_left, rect_right, DisparityMapGenerator::SGM);
+        DisparityMapGenerator disparity_map_generator(rect_left, rect_right, DisparityMapGenerator::SGBM);
         disparity_map_generator.computeDisparity();
         disparity_map_generator.displayDisparity();
         // Show additional debug/educational figures.
