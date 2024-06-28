@@ -10,7 +10,7 @@ Camera::Camera(const cv::Mat &K,
 Camera::Camera()
 {
     K_ = cv::Mat::eye(3, 3, CV_64F);
-    distortion_coeffs_ = cv::Mat::zeros(5, 1, CV_64F);
+    distortion_coeffs_ = cv::Mat::zeros(1, 5, CV_64F);
 }
 
 cv::Mat Camera::getIntrinsicMatrix() const
