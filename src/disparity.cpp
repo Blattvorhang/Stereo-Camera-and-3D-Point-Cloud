@@ -1,7 +1,4 @@
-﻿// TODO: Disparity optimization
-// TODO: Disparity refinement
-
-#include "../include/disparity.h"
+﻿#include "../include/disparity.h"
 #include <opencv2/calib3d.hpp>
 #include "../include/semi_global_matching.h"
 #include <chrono>
@@ -156,17 +153,16 @@ void DisparityMapGenerator::computeNCC() {
 }
 
 void DisparityMapGenerator::computeSGM() {
-    //···············································································//
-    const sint32 width = static_cast<uint32>(left_image_.cols);
-    const sint32 height = static_cast<uint32>(right_image_.rows);
+    const int width = left_image_.cols;
+    const int height = right_image_.rows;
 
     // 左右影像的灰度数据
-    auto bytes_left = new uint8[width * height];
-    auto bytes_right = new uint8[width * height];
+    auto bytes_left = new uint8_t[width * height];
+    auto bytes_right = new uint8_t[width * height];
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            bytes_left[i * width + j] = left_image_.at<uint8>(i, j);
-            bytes_right[i * width + j] = right_image_.at<uint8>(i, j);
+            bytes_left[i * width + j] = left_image_.at<uint8_t>(i, j);
+            bytes_right[i * width + j] = right_image_.at<uint8_t>(i, j);
         }
     }
 
@@ -219,7 +215,7 @@ void DisparityMapGenerator::computeSGM() {
     printf("SGM Matching...\n");
     start = std::chrono::steady_clock::now();
     // disparity数组保存子像素的视差结果
-    auto disparity = new float32[uint32(width * height)]();
+    auto disparity = new float[uint32_t(width * height)]();
     if (!sgm.Match(bytes_left, bytes_right, disparity)) {
         std::cout << "SGM匹配失败！" << std::endl;
         return;
@@ -233,18 +229,18 @@ void DisparityMapGenerator::computeSGM() {
     // 注意，计算点云不能用disp_mat的数据，它是用来显示和保存结果用的。计算点云要用上面的disparity数组里的数据，是子像素浮点数
     cv::Mat disp_mat = cv::Mat(height, width, CV_8UC1);
     float min_disp = width, max_disp = -width;
-    for (sint32 i = 0; i < height; i++) {
-        for (sint32 j = 0; j < width; j++) {
-            const float32 disp = disparity[i * width + j];
+    for (int32_t i = 0; i < height; i++) {
+        for (int32_t j = 0; j < width; j++) {
+            const float disp = disparity[i * width + j];
             if (disp != Invalid_Float) {
                 min_disp = std::min(min_disp, disp);
                 max_disp = std::max(max_disp, disp);
             }
         }
     }
-    for (sint32 i = 0; i < height; i++) {
-        for (sint32 j = 0; j < width; j++) {
-            const float32 disp = disparity[i * width + j];
+    for (int32_t i = 0; i < height; i++) {
+        for (int32_t j = 0; j < width; j++) {
+            const float disp = disparity[i * width + j];
             if (disp == Invalid_Float) {
                 disp_mat.data[i * width + j] = 0;
             }

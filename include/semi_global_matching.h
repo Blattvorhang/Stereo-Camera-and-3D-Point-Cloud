@@ -1,11 +1,17 @@
 ﻿#pragma once
 
-#include "../include/sgm_types.h"
 #include <vector>
+#include <stdint.h>
 
 /**
  * \brief SemiGlobalMatching类（General implementation of Semi-Global Matching）
  */
+#define UINT8_MAX        0xffui8
+#define UINT16_MAX       0xffffui16
+#define UINT32_MAX       0xffffffffui32
+#define UINT64_MAX       0xffffffffffffffffui64
+constexpr auto Invalid_Float = std::numeric_limits<float>::infinity();
+
 class SemiGlobalMatching
 {
 public:
@@ -21,17 +27,17 @@ public:
 
 	/** \brief SGM参数结构体 */
 	struct SGMOption {
-		uint8	num_paths;			// 聚合路径数 4 and 8
-		sint32  min_disparity;		// 最小视差
-		sint32	max_disparity;		// 最大视差
+		uint8_t	num_paths;			// 聚合路径数 4 and 8
+		int32_t  min_disparity;		// 最小视差
+		int32_t	max_disparity;		// 最大视差
 
 		CensusSize census_size;		// census窗口尺寸
 
 		bool	is_check_unique;	// 是否检查唯一性
-		float32	uniqueness_ratio;	// 唯一性约束阈值 （最小代价-次最小代价)/最小代价 > 阈值 为有效像素
+		float	uniqueness_ratio;	// 唯一性约束阈值 （最小代价-次最小代价)/最小代价 > 阈值 为有效像素
 
 		bool	is_check_lr;		// 是否检查左右一致性
-		float32	lrcheck_thres;		// 左右一致性约束阈值
+		float	lrcheck_thres;		// 左右一致性约束阈值
 
 		bool	is_remove_speckles;	// 是否移除小的连通区
 		int		min_speckle_aera;	// 最小的连通区面积（像素数）
@@ -40,8 +46,8 @@ public:
 
 		// P1,P2 
 		// P2 = P2_init / (Ip-Iq)
-		sint32  p1;				// 惩罚项参数P1
-		sint32  p2_init;		// 惩罚项参数P2
+		int32_t  p1;				// 惩罚项参数P1
+		int32_t  p2_init;		// 惩罚项参数P2
 
 		SGMOption(): num_paths(8), min_disparity(0), max_disparity(64), census_size(Census5x5),
 		             is_check_unique(true), uniqueness_ratio(0.95f),
@@ -57,7 +63,7 @@ public:
 	 * \param height	输入，核线像对影像高
 	 * \param option	输入，SemiGlobalMatching参数
 	 */
-	bool Initialize(const sint32& width, const sint32& height, const SGMOption& option);
+	bool Initialize(const int32_t& width, const int32_t& height, const SGMOption& option);
 
 	/**
 	 * \brief 执行匹配
@@ -65,7 +71,7 @@ public:
 	 * \param img_right	输入，右影像数据指针
 	 * \param disp_left	输出，左影像视差图指针，预先分配和影像等尺寸的内存空间
 	 */
-	bool Match(const uint8* img_left, const uint8* img_right, float32* disp_left);
+	bool Match(const uint8_t* img_left, const uint8_t* img_right, float* disp_left);
 
 	/**
 	 * \brief 重设
@@ -73,7 +79,7 @@ public:
 	 * \param height	输入，核线像对影像高
 	 * \param option	输入，SemiGlobalMatching参数
 	 */
-	bool Reset(const uint32& width, const uint32& height, const SGMOption& option);
+	bool Reset(const uint32_t& width, const uint32_t& height, const SGMOption& option);
 
 private:
 
@@ -106,16 +112,16 @@ private:
 	SGMOption option_;
 
 	/** \brief 影像宽	 */
-	sint32 width_;
+	int32_t width_;
 
 	/** \brief 影像高	 */
-	sint32 height_;
+	int32_t height_;
 
 	/** \brief 左影像数据	 */
-	const uint8* img_left_;
+	const uint8_t* img_left_;
 
 	/** \brief 右影像数据	 */
-	const uint8* img_right_;
+	const uint8_t* img_right_;
 	
 	/** \brief 左影像census值	*/
 	void* census_left_;
@@ -124,35 +130,35 @@ private:
 	void* census_right_;
 	
 	/** \brief 初始匹配代价	*/
-	uint8* cost_init_;
+	uint8_t* cost_init_;
 	
 	/** \brief 聚合匹配代价	*/
-	uint16* cost_aggr_;
+	uint16_t* cost_aggr_;
 
 	// ↘ ↓ ↙   5  3  7
 	// →    ←	 1    2
 	// ↗ ↑ ↖   8  4  6
 	/** \brief 聚合匹配代价-方向1	*/
-	uint8* cost_aggr_1_;
+	uint8_t* cost_aggr_1_;
 	/** \brief 聚合匹配代价-方向2	*/
-	uint8* cost_aggr_2_;
+	uint8_t* cost_aggr_2_;
 	/** \brief 聚合匹配代价-方向3	*/
-	uint8* cost_aggr_3_;
+	uint8_t* cost_aggr_3_;
 	/** \brief 聚合匹配代价-方向4	*/
-	uint8* cost_aggr_4_;
+	uint8_t* cost_aggr_4_;
 	/** \brief 聚合匹配代价-方向5	*/
-	uint8* cost_aggr_5_;
+	uint8_t* cost_aggr_5_;
 	/** \brief 聚合匹配代价-方向6	*/
-	uint8* cost_aggr_6_;
+	uint8_t* cost_aggr_6_;
 	/** \brief 聚合匹配代价-方向7	*/
-	uint8* cost_aggr_7_;
+	uint8_t* cost_aggr_7_;
 	/** \brief 聚合匹配代价-方向8	*/
-	uint8* cost_aggr_8_;
+	uint8_t* cost_aggr_8_;
 
 	/** \brief 左影像视差图	*/
-	float32* disp_left_;
+	float* disp_left_;
 	/** \brief 右影像视差图	*/
-	float32* disp_right_;
+	float* disp_right_;
 
 	/** \brief 是否初始化标志	*/
 	bool is_initialized_;
