@@ -3,7 +3,7 @@
 
 #include "../include/disparity.h"
 #include <opencv2/calib3d.hpp>
-#include "../include/SemiGlobalMatching.h"
+#include "../include/semi_global_matching.h"
 #include <chrono>
 using namespace std::chrono;
 
