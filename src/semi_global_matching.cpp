@@ -1,10 +1,10 @@
-﻿#include "../include/semi_global_matching.h"
-#include "../include/sgm_util.h"
-#include <algorithm>
+﻿#include <algorithm>
 #include <vector>
 #include <cassert>
 #include <chrono>
 #include <stdint.h>
+#include "../include/semi_global_matching.h"
+#include "../include/sgm_util.h"
 using namespace std::chrono;
 
 SemiGlobalMatching::SemiGlobalMatching(): width_(0), height_(0), img_left_(nullptr), img_right_(nullptr),
