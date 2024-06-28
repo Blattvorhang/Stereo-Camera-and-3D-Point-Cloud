@@ -3,7 +3,6 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 #include "../include/stereo_system.h"
-#include "../include/disparity.h"
 
 StereoSystem::StereoSystem(const std::string &param_path,
                            int camera_id,
@@ -120,9 +119,9 @@ void StereoSystem::run()
 
     cv::Mat ori_left, ori_right;   // original images
     cv::Mat rect_left, rect_right; // stereo rectified images
-    cv::Mat R1, R2, P1, P2, Q;
-    cv::Mat rectMapL1, rectMapL2, rectMapR1, rectMapR2;
-    cv::Mat rectLeft, rectRight;
+
+    while (true)
+    {
         if (camera_id_ >= 0) {
             // Capture images from camera.
             captureImages(cap, ori_left, ori_right);
@@ -132,7 +131,7 @@ void StereoSystem::run()
             rect_left = cv::imread("../test_imgs/rectified_left.png");
             rect_right = cv::imread("../test_imgs/rectified_right.png");
         }
-    {
+
         // Show rectified images.
         cv::imshow("Rectified Left", rect_left);
         cv::imshow("Rectified Right", rect_right);
@@ -142,6 +141,8 @@ void StereoSystem::run()
         // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
         // TODO: Compute disparity map.
+
+        // Show additional debug/educational figures.
         if (enable_debug_)
         {
             // if (!frame.empty())      { cv::imshow("Original", frame); }
@@ -154,19 +155,6 @@ void StereoSystem::run()
                 cv::imshow("Original Right", ori_right);
             }
         }
-            if (!leftImage.empty())
-            {
-                cv::imshow("Original Left", leftImage);
-            }
-            if (!rightImage.empty())
-            {
-                cv::imshow("Original Right", rightImage);
-            }
-        }
-
-        // Update the windows.
-        cv::waitKey(1);
-    }
 
         if (cv::waitKey(1) == 27) // Break on ESC
         {
