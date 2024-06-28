@@ -42,12 +42,6 @@ void DisparityMapGenerator::computeDisparity() {
     cv::imshow("preprocess Left", left_image_);
     cv::imshow("preprocess Right", right_image_);
     switch (method_) {
-    case SAD:
-        computeSAD();
-        break;
-    case SSD:
-        computeSSD();
-        break;
     case BM:
         computeBM();
         break;
@@ -55,6 +49,7 @@ void DisparityMapGenerator::computeDisparity() {
         computeSGBM();
         break;
         // 其他方法可以根据需要添加
+
     default:
         throw std::invalid_argument("Unsupported disparity method");
     }
@@ -78,50 +73,6 @@ void DisparityMapGenerator::displayDisparity() {
     // 显示处理后的视差图
     cv::namedWindow("Enhanced Disparity Map", cv::WINDOW_NORMAL);
     cv::imshow("Enhanced Disparity Map", dispBilateral);
-}
-
-
-void DisparityMapGenerator::computeSAD(int numDisparities, int blockSize) {
-    // 计算绝对差异和（SAD）视差图
-    disparity_ = cv::Mat(left_image_.size(), CV_8U, cv::Scalar(0));
-
-    // 对于每个像素，在允许的视差范围内搜索最佳匹配
-    for (int y = blockSize / 2; y < left_image_.rows - blockSize / 2; ++y) {
-        for (int x = blockSize / 2; x < left_image_.cols - blockSize / 2; ++x) {
-            int minSAD = INT_MAX;
-            int bestDisparity = 0;
-            for (int d = 0; d < numDisparities; ++d) {
-                int SAD = 0;
-                if (x - d < blockSize / 2) continue;  // 避免左图超出边界
-
-                for (int dy = -blockSize / 2; dy <= blockSize / 2; ++dy) {
-                    for (int dx = -blockSize / 2; dx <= blockSize / 2; ++dx) {
-                        int leftPixel = left_image_.at<uchar>(y + dy, x + dx);
-                        int rightX = x + dx - d;
-                        if (rightX < 0 || rightX >= right_image_.cols) continue; // 避免右图超出边界
-                        int rightPixel = right_image_.at<uchar>(y + dy, rightX);
-                        SAD += std::abs(leftPixel - rightPixel);
-                    }
-                }
-
-                if (SAD < minSAD) {
-                    minSAD = SAD;
-                    bestDisparity = d;
-                }
-            }
-            disparity_.at<uchar>(y, x) = static_cast<uchar>((bestDisparity * 255) / (numDisparities - 1)); // 改进视差归一化
-        }
-    }
-}
-
-
-
-void DisparityMapGenerator::computeSSD() {
-    // 计算平方差异（SD）视差图
-    cv::Mat disparity;
-    // SD方法的实现
-    // TODO: 实现SD方法
-    this->disparity_ = disparity;
 }
 
 void DisparityMapGenerator::computeBM() {

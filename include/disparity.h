@@ -13,8 +13,6 @@ public:
     enum DisparityMethod {
         BM,
         SGBM,
-        SAD,
-        SSD,
         NCC,
         DP,
         GC,
