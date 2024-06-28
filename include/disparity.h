@@ -1,4 +1,4 @@
-#ifndef DISPARITY_H
+ï»¿#ifndef DISPARITY_H
 #define DISPARITY_H
 
 #include <opencv2/opencv.hpp>
@@ -22,18 +22,18 @@ public:
     };
     DisparityMapGenerator(const cv::Mat& leftImage, const cv::Mat& rightImage, DisparityMethod method);
     void computeDisparity();
-    void displayDisparity();  // ½«ÊÓ²îÍ¼¹éÒ»»¯²¢ÏÔÊ¾
+    void displayDisparity();  // å°†è§†å·®å›¾å½’ä¸€åŒ–å¹¶æ˜¾ç¤º
 private:
     cv::Mat left_image_;
     cv::Mat right_image_;
     cv::Mat disparity_;
     DisparityMethod method_;
-    void computeSAD(int numDisparities = 16 * 5, int blockSize = 5);
-    void computeSSD();
     void computeBM();
     void computeSGBM();
+    void computeNCC();
+    void computeSGM();
     void preprocessImage(cv::Mat& image, bool useGaussianBlur = true);
-    // ÆäËû·½·¨¿ÉÒÔ¸ù¾İĞèÒªÌí¼Ó
+    // å…¶ä»–æ–¹æ³•å¯ä»¥æ ¹æ®éœ€è¦æ·»åŠ 
 };
 
 #endif // DISPARITY_H

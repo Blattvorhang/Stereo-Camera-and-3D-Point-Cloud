@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <string>
 #include "../include/stereo_system.h"
 
@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
      *        [-h | --help]
      */
     const std::string param_path = "../calibration/";
-    int camera_id = 0;  // -1 for file input
+    int camera_id = -1;  // -1 for file input
     int width = 1280;
     int height = 720;
     bool enable_debug = false;
