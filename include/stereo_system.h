@@ -39,10 +39,6 @@ private:
     void readCalibrationParameters(const std::string &param_path);
     void captureImages(cv::VideoCapture &cap, cv::Mat &left_image, cv::Mat &right_image);
 
-    cv::VideoCapture openCamera(int camera_id, int width, int height);
-
-    void captureImages(cv::VideoCapture &cap, cv::Mat &left_image, cv::Mat &right_image);
-
     int camera_id_;
     int width_;
     int height_;
