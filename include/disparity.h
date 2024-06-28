@@ -8,6 +8,8 @@
 class DisparityMapGenerator
 {
 public:
+    //cv::Mat computeDisparity(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method);
+
     enum DisparityMethod {
         StereoBM,
         SAD,
