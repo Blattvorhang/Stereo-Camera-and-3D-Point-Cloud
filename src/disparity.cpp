@@ -18,23 +18,30 @@ void DisparityMapGenerator::preprocessImage(cv::Mat& image, bool useGaussianBlur
         cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
     }
 
-    // 调整图像大小到640x360
-    cv::resize(image, image, cv::Size(640, 360));
+    // 调整图像大小到640x360（或你认为合适的大小）
+    //cv::resize(image, image, cv::Size(640, 360));
 
     // 应用高斯模糊以减少图像噪声（如果启用）
     if (useGaussianBlur) {
-        // 使用更大的高斯核增强模糊效果
-        cv::GaussianBlur(image, image, cv::Size(3, 3), 0);
+        cv::GaussianBlur(image, image, cv::Size(5, 5), 0);
     }
 
-    // 直方图均衡化以增强图像对比度
-    cv::equalizeHist(image, image);
+    // 自适应直方图均衡化以增强图像对比度
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+    clahe->setClipLimit(4.0);
+    clahe->apply(image, image);
 
     // 转换图像格式到8位无符号整数类型（如果尚未转换）
     if (image.type() != CV_8U) {
-        image.convertTo(image, CV_8U, 255.0);
+        image.convertTo(image, CV_8U);
     }
+
+    // 边缘保留滤波
+    cv::Mat temp;
+    cv::ximgproc::guidedFilter(image, image, temp, 8, 0.1);
+    image = temp;
 }
+
 
 void DisparityMapGenerator::computeDisparity() {
     cv::imshow("preprocess Left", left_image_);
