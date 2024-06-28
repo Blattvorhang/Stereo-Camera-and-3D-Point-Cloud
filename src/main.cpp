@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
      *        [-h | --help]
      */
     const std::string param_path = "../calibration/";
-    int camera_id = 0;
+    int camera_id = 0;  // -1 for file input
     int width = 1280;
     int height = 720;
     bool enable_debug = false;
@@ -27,6 +27,11 @@ int main(int argc, char *argv[])
                 {
                     camera_id = std::stoi(argv[++i]);
                 }
+                else
+                {
+                    std::cerr << "Missing camera ID argument." << std::endl;
+                    return EXIT_FAILURE;
+                }
             }
             else if (arg == "-s" || arg == "--size")
             {
@@ -34,6 +39,11 @@ int main(int argc, char *argv[])
                 {
                     width = std::stoi(argv[++i]);
                     height = std::stoi(argv[++i]);
+                }
+                else
+                {
+                    std::cerr << "Missing width and/or height arguments." << std::endl;
+                    return EXIT_FAILURE;
                 }
             }
             else if (arg == "-d" || arg == "--debug")
@@ -50,7 +60,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-    
+
     try
     {
         StereoSystem stereo_system(param_path, camera_id, width, height, enable_debug);

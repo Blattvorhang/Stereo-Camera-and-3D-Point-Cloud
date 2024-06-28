@@ -11,6 +11,9 @@ class StereoSystem
 public:
     /// \brief Constructs a stereo system object.
     /// \param param_path Optional path to parameter files.
+    /// \param camera_id The camera ID to use, -1 for file input.
+    /// \param single_camera_width The width of the single camera image.
+    /// \param single_camera_height The height of the single camera image.
     /// \param enable_debug Shows additional debug/educational figures and prints if true.
     explicit StereoSystem(const std::string &param_path = "../calibration/",
                           int camera_id = 0,
@@ -34,9 +37,6 @@ private:
     void checkSize(const cv::Mat& mat, int expected_rows, int expected_cols);
 
     void readCalibrationParameters(const std::string &param_path);
-
-    cv::VideoCapture openCamera(int camera_id, int width, int height);
-
     void captureImages(cv::VideoCapture &cap, cv::Mat &left_image, cv::Mat &right_image);
 
     int camera_id_;

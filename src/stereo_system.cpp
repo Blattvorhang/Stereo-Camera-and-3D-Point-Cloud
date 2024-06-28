@@ -103,13 +103,17 @@ void StereoSystem::captureImages(cv::VideoCapture &cap, cv::Mat &left_image, cv:
 void StereoSystem::run()
 {
     // Open video stream from camera.
-    cv::VideoCapture cap(camera_id_);
-    if (!cap.isOpened())
+    cv::VideoCapture cap;
+    if (camera_id_ >= 0)
     {
-        throw std::runtime_error("Could not open camera.");
+        cap = cv::VideoCapture(camera_id_);
+        if (!cap.isOpened())
+        {
+            throw std::runtime_error("Could not open camera.");
+        }
+        cap.set(cv::CAP_PROP_FRAME_WIDTH, width_ * 2);
+        cap.set(cv::CAP_PROP_FRAME_HEIGHT, height_);
     }
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, width_ * 2);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, height_);
 
     calibrateStereoCameras();
 
@@ -118,12 +122,23 @@ void StereoSystem::run()
 
     while (true)
     {
-        captureImages(cap, ori_left, ori_right);
-        rectifyImages(ori_left, ori_right, rect_left, rect_right);
+        if (camera_id_ >= 0) {
+            // Capture images from camera.
+            captureImages(cap, ori_left, ori_right);
+            rectifyImages(ori_left, ori_right, rect_left, rect_right);
+        } else { 
+            // Load images from file.
+            rect_left = cv::imread("../test_imgs/rectified_left.png");
+            rect_right = cv::imread("../test_imgs/rectified_right.png");
+        }
 
         // Show rectified images.
         cv::imshow("Rectified Left", rect_left);
         cv::imshow("Rectified Right", rect_right);
+
+        // Save rectified images.
+        // cv::imwrite("../test_imgs/rectified_left.png", rect_left);
+        // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
         // TODO: Compute disparity map.
 
@@ -141,7 +156,9 @@ void StereoSystem::run()
             }
         }
 
-        // Update the windows.
-        cv::waitKey(1);
+        if (cv::waitKey(1) == 27) // Break on ESC
+        {
+            break;
+        }
     }
 }
