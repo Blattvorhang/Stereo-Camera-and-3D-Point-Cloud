@@ -3,6 +3,7 @@
 #include <cassert>
 #include <vector>
 #include <queue>
+#include 
 #define uint8_t_MAX        0xffui8
 
 void sgm_util::census_transform_5x5(const uint8_t* source, uint32_t* census, const int32_t& width, const int32_t& height)
