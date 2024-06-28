@@ -1,19 +1,37 @@
-#include "../include/stereo_system.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <iostream>
+#include "../include/stereo_system.h"
 
-StereoSystem::StereoSystem(const std::string &data_path)
-    : data_path_{data_path}
-    , window_name_{"Stereo System"}
-    , camera_id_{0}
-    , single_camera_width_{1280}
-    , single_camera_height_{720}
+StereoSystem::StereoSystem(const std::string &param_path,
+                           int camera_id,
+                           int single_camera_width,
+                           int single_camera_height,
+                           bool do_visualize)
+    : camera_id_{camera_id},
+      width_{single_camera_width},
+      height_{single_camera_height},
+      do_visualize_{do_visualize}
+{
+    readCalibrationParameters(param_path);
+}
+
+
+void StereoSystem::checkSize(const cv::Mat& mat, int expected_rows, int expected_cols) {
+    if (mat.rows != expected_rows || mat.cols != expected_cols) {
+        throw std::runtime_error("Matrix size does not match the expected size.");
+    }
+}
+
+
+void StereoSystem::readCalibrationParameters(const std::string &param_path)
 {
     std::stringstream filepath;
-    filepath << data_path << "calib_param.yml";
+    filepath << param_path << "calib_param.yml";
     cv::FileStorage fs(filepath.str(), cv::FileStorage::READ);
+
+    cv::Mat cameraMatrixL, distCoeffsL, cameraMatrixR, distCoeffsR;
 
     // Read the camera matrices and distortion coefficients.
     fs["cameraMatrixL"] >> cameraMatrixL;
@@ -22,34 +40,42 @@ StereoSystem::StereoSystem(const std::string &data_path)
     fs["distCoeffsR"] >> distCoeffsR;
 
     // Read the rotation and translation matrices.
-    fs["R"] >> R;
-    fs["T"] >> T;
+    fs["R"] >> R_;
+    fs["T"] >> T_;
 
-    std::cout << "cameraMatrixL: " << cameraMatrixL << std::endl;
-    std::cout << "distCoeffsL: " << distCoeffsL << std::endl;
-    std::cout << "cameraMatrixR: " << cameraMatrixR << std::endl;
-    std::cout << "distCoeffsR: " << distCoeffsR << std::endl;
-    std::cout << "R: " << R << std::endl;
-    std::cout << "T: " << T << std::endl;
+    // Check the sizes of the matrices.
+    try {
+        checkSize(cameraMatrixL, 3, 3); // Assuming camera matrices are 3x3
+        checkSize(distCoeffsL, 1, 5);   // Assuming distortion coefficients are 1x5
+        checkSize(cameraMatrixR, 3, 3); 
+        checkSize(distCoeffsR, 1, 5); 
+        checkSize(R_, 3, 3);             // Rotation matrix is 3x3
+        checkSize(T_, 3, 1);             // Translation vector is 3x1
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return -1;
+    }
+
+    std::cout << "Camera matrices and distortion coefficients loaded successfully." << std::endl;
+
+    // Store the matrices and vectors.
+    left_camera_{cameraMatrixL, distCoeffsL};
+    right_camera_{cameraMatrixR, distCoeffsR};
 
     fs.release();
 }
 
+
 void StereoSystem::run()
 {
-    // Construct viewers.
-    cv::namedWindow(window_name_);
-
     // Open video stream from camera.
-    const int camera_id = 0;
-    cv::VideoCapture cap(camera_id);
+    cv::VideoCapture cap(camera_id_);
     if (!cap.isOpened())
     {
         throw std::runtime_error("Could not open camera.");
     }
-
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, single_camera_width_ * 2);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, single_camera_height_);
+    cap.set(cv::CAP_PROP_FRAME_WIDTH, width_ * 2);
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT, height_);
 
     // Assuming cap is your cv::VideoCapture object
     double width = cap.get(cv::CAP_PROP_FRAME_WIDTH);
@@ -61,12 +87,12 @@ void StereoSystem::run()
     cv::Mat R1, R2, P1, P2, Q;
     cv::Mat rectMapL1, rectMapL2, rectMapR1, rectMapR2;
     cv::Mat rectLeft, rectRight;
-    
-    cv::stereoRectify(cameraMatrixL, distCoeffsL,
-                        cameraMatrixR, distCoeffsR,
-                        cv::Size(single_camera_width_, single_camera_height_),
-                        R, T, R1, R2, P1, P2, Q,
-                        cv::CALIB_ZERO_DISPARITY, 1, cv::Size(single_camera_width_, single_camera_height_));
+
+    cv::stereoRectify(left_camera_.getIntrinsicMatrix(), left_camera_.getDistortionCoeffs(),
+                      right_camera_.getIntrinsicMatrix(), right_camera_.getDistortionCoeffs(),
+                      cv::Size(single_camera_width_, single_camera_height_),
+                      R, T, R1, R2, P1, P2, Q,
+                      cv::CALIB_ZERO_DISPARITY, 1, cv::Size(single_camera_width_, single_camera_height_));
 
     while (true)
     {
@@ -82,19 +108,54 @@ void StereoSystem::run()
         cv::imshow("Right", rightImage);
 
         // Rectify the images.
-        cv::initUndistortRectifyMap(cameraMatrixL, distCoeffsL, R1, P1,
+        cv::initUndistortRectifyMap(left_camera_.getIntrinsicMatrix(), left_camera_.getDistortionCoeffs(),
+                                    R1, P1,
                                     cv::Size(single_camera_width_, single_camera_height_),
                                     CV_32FC1, rectMapL1, rectMapL2);
-        cv::initUndistortRectifyMap(cameraMatrixR, distCoeffsR, R2, P2,
+        cv::initUndistortRectifyMap(right_camera_.getIntrinsicMatrix(), right_camera_.getDistortionCoeffs(),
+                                    R2, P2,
                                     cv::Size(single_camera_width_, single_camera_height_),
                                     CV_32FC1, rectMapR1, rectMapR2);
-        
+
         cv::remap(leftImage, rectLeft, rectMapL1, rectMapL2, cv::INTER_LINEAR);
         cv::remap(rightImage, rectRight, rectMapR1, rectMapR2, cv::INTER_LINEAR);
 
         // Show rectified images.
         cv::imshow("Rectified Left", rectLeft);
         cv::imshow("Rectified Right", rectRight);
+
+        // Show additional debug/educational figures.
+        if (do_visualize_)
+        {
+            if (!Ix.empty())
+            {
+                cv::imshow("Gradient Ix", Ix);
+            };
+            if (!Iy.empty())
+            {
+                cv::imshow("Gradient Iy", Iy);
+            };
+            if (!A.empty())
+            {
+                cv::imshow("Image A", A);
+            };
+            if (!B.empty())
+            {
+                cv::imshow("Image B", B);
+            };
+            if (!C.empty())
+            {
+                cv::imshow("Image C", C);
+            };
+            if (!response.empty())
+            {
+                cv::imshow("Response", response / (0.9 * max_val));
+            };
+            if (!is_strong_and_local_max.empty())
+            {
+                cv::imshow("Local max", is_strong_and_local_max);
+            };
+        }
 
         // Update the windows.
         cv::waitKey(1);

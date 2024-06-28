@@ -3,48 +3,40 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/calib3d.hpp"
 
-PerspectiveCameraModel::PerspectiveCameraModel(const Eigen::Matrix3d &K,
-                                               const Sophus::SE3d &pose_world_camera,
-                                               const Vector5d &distortion_coeffs)
-    : K_{K}, pose_world_camera_{pose_world_camera}, distortion_coeffs_{distortion_coeffs}
-{
-    camera_projection_matrix_ = computeCameraProjectionMatrix();
-}
+Camera::Camera(const cv::Mat &K,
+               const cv::Mat &distortion_coeffs)
+    : K_{K}, distortion_coeffs_{distortion_coeffs}
+{ }
 
-Sophus::SE3d PerspectiveCameraModel::getPose() const
-{
-    return pose_world_camera_;
-}
-
-Eigen::Matrix3d PerspectiveCameraModel::getCalibrationMatrix() const
+cv::Mat Camera::getIntrinsicMatrix() const
 {
     return K_;
 }
 
-PerspectiveCameraModel::Matrix34d PerspectiveCameraModel::getCameraProjectionMatrix() const
+cv::Mat Camera::getDistortionCoeffs() const
 {
-    return camera_projection_matrix_;
+    return distortion_coeffs_;
 }
 
-Eigen::Vector2d PerspectiveCameraModel::projectWorldPoint(Eigen::Vector3d world_point) const
+cv::Mat Camera::getProjectionMatrix() const
+{
+    return projection_matrix_;
+}
+
+/*
+Eigen::Vector2d Camera::projectWorldPoint(Eigen::Vector3d world_point) const
 {
     // DONE: Implement projection using camera_projection_matrix_.
     return (camera_projection_matrix_ * world_point.homogeneous()).hnormalized();
 }
 
-Eigen::Matrix2Xd PerspectiveCameraModel::projectWorldPoints(Eigen::Matrix3Xd world_points) const
+Eigen::Matrix2Xd Camera::projectWorldPoints(Eigen::Matrix3Xd world_points) const
 {
     // DONE: Optionally implement projection using camera_projection_matrix_.
     return (camera_projection_matrix_ * world_points.colwise().homogeneous()).colwise().hnormalized();
 }
 
-PerspectiveCameraModel::Matrix34d PerspectiveCameraModel::computeCameraProjectionMatrix()
-{
-    // DONE: Compute camera projection matrix.
-    return K_ * pose_world_camera_.inverse().matrix3x4();
-}
-
-cv::Mat PerspectiveCameraModel::undistortImage(cv::Mat distorted_image) const
+cv::Mat Camera::undistortImage(cv::Mat distorted_image) const
 {
     // Convert to cv::Mats
     cv::Mat K_cv;
@@ -58,3 +50,4 @@ cv::Mat PerspectiveCameraModel::undistortImage(cv::Mat distorted_image) const
 
     return undistorted_image;
 }
+*/
