@@ -12,17 +12,17 @@ distCoeffs2 = [RD2(1), RD2(2), TD2(1), TD2(2), 0];
 R = stereoParams.RotationOfCamera2';
 T = stereoParams.TranslationOfCamera2';
 
-T = -R' * T;
-R = R'; 
+% T = -R' * T;
+% R = R'; 
 
 fileID = fopen('calib_param.yml', 'w');
 fprintf(fileID, '%%YAML:1.0\n');
 fprintf(fileID, 'cameraMatrixL: !!opencv-matrix\n');
-fprintf(fileID, '   rows: 3\n   cols: 3\n   dt: d\n   data: [%f, %f, %f, %f, %f, %f, %f, %f, %f]\n', cameraMatrix1');
+fprintf(fileID, '   rows: 3\n   cols: 3\n   dt: d\n   data: [%f, %f, %f, %f, %f, %f, %f, %f, %f]\n', K1');
 fprintf(fileID, 'distCoeffsL: !!opencv-matrix\n');
 fprintf(fileID, '   rows: 1\n   cols: 5\n   dt: d\n   data: [%f, %f, %f, %f, %f]\n', distCoeffs1');
 fprintf(fileID, 'cameraMatrixR: !!opencv-matrix\n');
-fprintf(fileID, '   rows: 3\n   cols: 3\n   dt: d\n   data: [%f, %f, %f, %f, %f, %f, %f, %f, %f]\n', cameraMatrix2');
+fprintf(fileID, '   rows: 3\n   cols: 3\n   dt: d\n   data: [%f, %f, %f, %f, %f, %f, %f, %f, %f]\n', K2');
 fprintf(fileID, 'distCoeffsR: !!opencv-matrix\n');
 fprintf(fileID, '   rows: 1\n   cols: 5\n   dt: d\n   data: [%f, %f, %f, %f, %f]\n', distCoeffs2');
 fprintf(fileID, 'R: !!opencv-matrix\n');
