@@ -181,7 +181,7 @@ void DisparityMapGenerator::computeSGM() {
     sgm_option.is_check_lr = true;  // 是否进行左右一致性检查
     sgm_option.lrcheck_thres = 1.0f;  // 左右一致性检查的阈值
     sgm_option.is_check_unique = true;  // 是否进行唯一性检查
-    sgm_option.uniqueness_ratio = 0.99;  // 唯一性检查的比例阈值
+    sgm_option.uniqueness_ratio = (float)0.99;  // 唯一性检查的比例阈值
     sgm_option.is_remove_speckles = true;  // 是否移除小区块
     sgm_option.min_speckle_aera = 50;  // 最小的连通区块大小
     sgm_option.p1 = 10;  // SGM算法的惩罚项P1
@@ -189,13 +189,13 @@ void DisparityMapGenerator::computeSGM() {
     sgm_option.is_fill_holes = false;  // 是否填充视差图中的孔洞（通常用于科研）
 
     // 输出配置的视差范围信息
-    printf("w = %d, h = %d, d = [%d,%d]\n\n", width, height, sgm_option.min_disparity, sgm_option.max_disparity);
+	std::cout << "w = " << width << ", h = " << height << ", d = [" << sgm_option.min_disparity << "," << sgm_option.max_disparity << "]" << std::endl;
 
     // 创建SGM匹配类的实例
     SemiGlobalMatching sgm;
 
     // 初始化SGM算法
-    printf("SGM Initializing...\n");
+    std::cout << "SGM Initializing..." << std::endl;
     auto start = std::chrono::steady_clock::now();
     if (!sgm.Initialize(width, height, sgm_option)) {
         std::cout << "SGM初始化失败！" << std::endl;
@@ -203,10 +203,10 @@ void DisparityMapGenerator::computeSGM() {
     }
     auto end = std::chrono::steady_clock::now();
     auto tt = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    printf("SGM Initializing Done! Timing : %lf s\n\n", tt.count() / 1000.0);
+	std::cout << "SGM Initializing Done! Timing : " << tt.count() / 1000.0 << " s" << std::endl;
 
     // 执行SGM匹配
-    printf("SGM Matching...\n");
+	std::cout << "SGM Matching..." << std::endl;
     start = std::chrono::steady_clock::now();
     auto disparity = new float[uint32_t(width * height)]();  // 存储子像素精度的视差结果
     if (!sgm.Match(bytes_left, bytes_right, disparity)) {
@@ -215,11 +215,11 @@ void DisparityMapGenerator::computeSGM() {
     }
     end = std::chrono::steady_clock::now();
     tt = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    printf("\nSGM Matching...Done! Timing :   %lf s\n", tt.count() / 1000.0);
+	std::cout << "SGM Matching...Done! Timing : " << tt.count() / 1000.0 << " s" << std::endl;
 
     // 生成视差图，用于显示和结果保存
     cv::Mat disp_mat = cv::Mat(height, width, CV_8UC1);
-    float min_disp = width, max_disp = -width;
+    float min_disp = (float)width, max_disp = (float)-width;
     // 计算视差图的最小和最大视差值
     for (int32_t i = 0; i < height; i++) {
         for (int32_t j = 0; j < width; j++) {
