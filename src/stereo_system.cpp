@@ -3,6 +3,7 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 #include "../include/stereo_system.h"
+#include "../include/disparity.h"
 
 StereoSystem::StereoSystem(const std::string &param_path,
                            int camera_id,
@@ -141,6 +142,7 @@ void StereoSystem::run()
         // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
         // TODO: Compute disparity map.
+
 
         // Show additional debug/educational figures.
         if (enable_debug_)

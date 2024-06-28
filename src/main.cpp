@@ -68,12 +68,12 @@ int main(int argc, char *argv[])
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Caught exception:\n"
-                  << e.what() << "\n";
+        std::cerr << "Caught exception:" << std::endl
+                  << e.what() << std::endl;
     }
     catch (...)
     {
-        std::cerr << "Caught unknown exception\n";
+        std::cerr << "Caught unknown exception" << std::endl;
     }
 
     return EXIT_SUCCESS;
