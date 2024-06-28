@@ -66,7 +66,7 @@ void StereoSystem::run()
                         cameraMatrixR, distCoeffsR,
                         cv::Size(single_camera_width_, single_camera_height_),
                         R, T, R1, R2, P1, P2, Q,
-                        cv::CALIB_ZERO_DISPARITY, 1, cv::Size(single_camera_width_, single_camera_height_));
+                        cv::CALIB_ZERO_DISPARITY, 0, cv::Size(single_camera_width_, single_camera_height_));
 
     while (true)
     {

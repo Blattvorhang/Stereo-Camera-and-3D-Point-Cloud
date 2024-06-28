@@ -2,6 +2,7 @@
 #define STEREO_SYSTEM_H
 
 #include <string>
+#include <opencv2/opencv.hpp>
 
 /// \brief Whole stereo system class.
 class StereoSystem
