@@ -92,7 +92,7 @@ void StereoSystem::run()
                       right_camera_.getIntrinsicMatrix(), right_camera_.getDistortionCoeffs(),
                       cv::Size(width_, height_),
                       R_, T_, R1, R2, P1, P2, Q,
-                      cv::CALIB_ZERO_DISPARITY, 1, cv::Size(width_, height_));
+                      cv::CALIB_ZERO_DISPARITY, 0, cv::Size(width_, height_));
 
     while (true)
     {
@@ -102,10 +102,6 @@ void StereoSystem::run()
         // Cut the frame into two images.
         leftImage = frame.colRange(0, frame.cols / 2);
         rightImage = frame.colRange(frame.cols / 2, frame.cols);
-
-        // Show left and right images.
-        cv::imshow("Left", leftImage);
-        cv::imshow("Right", rightImage);
 
         // Rectify the images.
         cv::initUndistortRectifyMap(left_camera_.getIntrinsicMatrix(), left_camera_.getDistortionCoeffs(),
@@ -123,37 +119,17 @@ void StereoSystem::run()
         cv::imshow("Rectified Right", rectRight);
 
         // Show additional debug/educational figures.
-        /*if (do_visualize_)
+        if (do_visualize_)
         {
-            if (!Ix.empty())
+            if (!leftImage.empty())
             {
-                cv::imshow("Gradient Ix", Ix);
-            };
-            if (!Iy.empty())
+                cv::imshow("Original Left", leftImage);
+            }
+            if (!rightImage.empty())
             {
-                cv::imshow("Gradient Iy", Iy);
-            };
-            if (!A.empty())
-            {
-                cv::imshow("Image A", A);
-            };
-            if (!B.empty())
-            {
-                cv::imshow("Image B", B);
-            };
-            if (!C.empty())
-            {
-                cv::imshow("Image C", C);
-            };
-            if (!response.empty())
-            {
-                cv::imshow("Response", response / (0.9 * max_val));
-            };
-            if (!is_strong_and_local_max.empty())
-            {
-                cv::imshow("Local max", is_strong_and_local_max);
-            };
-        }*/
+                cv::imshow("Original Right", rightImage);
+            }
+        }
 
         // Update the windows.
         cv::waitKey(1);

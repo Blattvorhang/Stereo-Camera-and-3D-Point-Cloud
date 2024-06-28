@@ -19,8 +19,8 @@ include_directories(/usr/local/include/eigen3)
 # add the executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
-    src/intrinsics.cpp
     src/stereo_system.cpp
+    src/camera.cpp
 )
 
 # add the include directory

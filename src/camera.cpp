@@ -1,4 +1,3 @@
-#include <opencv2/core/eigen.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 #include "../include/camera.h"
@@ -7,6 +6,12 @@ Camera::Camera(const cv::Mat &K,
                const cv::Mat &distortion_coeffs)
     : K_{K}, distortion_coeffs_{distortion_coeffs}
 { }
+
+Camera::Camera()
+{
+    K_ = cv::Mat::eye(3, 3, CV_64F);
+    distortion_coeffs_ = cv::Mat::zeros(5, 1, CV_64F);
+}
 
 cv::Mat Camera::getIntrinsicMatrix() const
 {

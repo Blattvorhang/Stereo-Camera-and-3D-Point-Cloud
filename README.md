@@ -79,17 +79,11 @@ classDiagram
         +cv::Mat generateDepthMap(cv::Mat disparityMap)
     }
 
-    class FeatureMatcher {
-        +std::vector<cv::KeyPoint> detectFeatures(cv::Mat image)
-        +std::vector<cv::DMatch> matchFeatures(cv::Mat leftImage, cv::Mat rightImage)
-    }
-
     class DisparityMapGenerator {
         +cv::Mat computeDisparity(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method)
     }
 
     StereoSystem --> Camera
-    StereoSystem --> FeatureMatcher
     StereoSystem --> DisparityMapGenerator
 ```
 

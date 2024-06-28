@@ -1,8 +1,6 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <Eigen/Dense>
-#include <sophus/se3.hpp>
 #include <opencv2/core.hpp>
 
 /// \brief Represents the Perspective Camera Model.
@@ -12,8 +10,9 @@ public:
     /// \brief Constructs the camera model.
     /// \param K The intrinsic calibration matrix.
     /// \param distortion_coeffs Distortion coefficients on the form [k1, k2, p1, p2, k3].
-    explicit Camera(const cv::Mat &K = cv::Mat::eye(3, 3, CV_64F),
-                    const cv::Mat &distortion_coeffs = cv::Mat::zeros(1, 5, CV_64F));
+    explicit Camera(const cv::Mat &K,
+                    const cv::Mat &distortion_coeffs);
+    Camera();
 
     /// \return The intrinsic calibration matrix.
     cv::Mat getIntrinsicMatrix() const;
