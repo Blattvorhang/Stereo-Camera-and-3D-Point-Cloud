@@ -8,8 +8,11 @@
 class DisparityMapGenerator
 {
 public:
+    //cv::Mat computeDisparity(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method);
+
     enum DisparityMethod {
-        StereoBM,
+        BM,
+        SGBM,
         SAD,
         SSD,
         NCC,
@@ -17,8 +20,6 @@ public:
         GC,
         BP,
         SGM,
-        BM,
-        SGBM,
         FBS
     };
     DisparityMapGenerator(const cv::Mat& leftImage, const cv::Mat& rightImage, DisparityMethod method);
@@ -33,7 +34,6 @@ private:
     void computeSSD();
     void computeBM();
     void computeSGBM();
-    void computeStereoBM();
     void preprocessImage(cv::Mat& image, bool useGaussianBlur = true);
     // 其他方法可以根据需要添加
 };

@@ -42,9 +42,6 @@ void DisparityMapGenerator::computeDisparity() {
     cv::imshow("preprocess Left", left_image_);
     cv::imshow("preprocess Right", right_image_);
     switch (method_) {
-    case StereoBM:
-        computeStereoBM();
-        break;
     case SAD:
         computeSAD();
         break;
@@ -81,17 +78,6 @@ void DisparityMapGenerator::displayDisparity() {
     // 显示处理后的视差图
     cv::namedWindow("Enhanced Disparity Map", cv::WINDOW_NORMAL);
     cv::imshow("Enhanced Disparity Map", dispBilateral);
-}
-
-void DisparityMapGenerator::computeStereoBM() {
-    // 计算视差图
-    // 创建StereoBM对象
-    int numDisparities = 16 * 5;
-    int blockSize = 31;
-    cv::Ptr<cv::StereoBM> stereoBM = cv::StereoBM::create(numDisparities, blockSize);
-
-    // 计算视差图
-    stereoBM->compute(left_image_, right_image_, disparity_);
 }
 
 
