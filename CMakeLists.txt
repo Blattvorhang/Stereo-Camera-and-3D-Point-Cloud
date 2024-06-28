@@ -21,6 +21,7 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
     src/stereo_system.cpp
     src/camera.cpp
+    src/disparity.cpp
 )
 
 # add the include directory

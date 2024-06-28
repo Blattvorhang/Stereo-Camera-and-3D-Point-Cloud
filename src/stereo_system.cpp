@@ -3,16 +3,17 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 #include "../include/stereo_system.h"
+#include "../include/disparity.h"
 
 StereoSystem::StereoSystem(const std::string &param_path,
                            int camera_id,
                            int single_camera_width,
                            int single_camera_height,
-                           bool do_visualize)
+                           bool enable_debug)
     : camera_id_{camera_id},
       width_{single_camera_width},
       height_{single_camera_height},
-      do_visualize_{do_visualize}
+      enable_debug_{enable_debug}
 {
     readCalibrationParameters(param_path);
 }
@@ -66,6 +67,41 @@ void StereoSystem::readCalibrationParameters(const std::string &param_path)
 }
 
 
+void StereoSystem::calibrateStereoCameras()
+{
+    cv::stereoRectify(left_camera_.getIntrinsicMatrix(), left_camera_.getDistortionCoeffs(),
+                      right_camera_.getIntrinsicMatrix(), right_camera_.getDistortionCoeffs(),
+                      cv::Size(width_, height_),
+                      R_, T_, R1_, R2_, P1_, P2_, Q_,
+                      cv::CALIB_ZERO_DISPARITY, 0, cv::Size(width_, height_));
+}
+
+
+void StereoSystem::rectifyImages(const cv::Mat &ori_left, const cv::Mat &ori_right,
+                   cv::Mat &rectified_ori_left, cv::Mat &rectified_ori_right)
+{
+    cv::Mat rect_map_L1, rect_map_L2, rect_map_R1, rect_map_R2;
+
+    cv::initUndistortRectifyMap(left_camera_.getIntrinsicMatrix(), left_camera_.getDistortionCoeffs(),
+                                R1_, P1_, cv::Size(width_, height_),
+                                CV_32FC1, rect_map_L1, rect_map_L2);
+    cv::initUndistortRectifyMap(right_camera_.getIntrinsicMatrix(), right_camera_.getDistortionCoeffs(),
+                                R2_, P2_, cv::Size(width_, height_),
+                                CV_32FC1, rect_map_R1, rect_map_R2);
+
+    cv::remap(ori_left, rectified_ori_left, rect_map_L1, rect_map_L2, cv::INTER_LINEAR);
+    cv::remap(ori_right, rectified_ori_right, rect_map_R1, rect_map_R2, cv::INTER_LINEAR);
+}
+
+
+void StereoSystem::captureImages(cv::VideoCapture &cap, cv::Mat &left_image, cv::Mat &right_image)
+{
+    static cv::Mat frame;
+    cap >> frame;
+    left_image = frame.colRange(0, frame.cols / 2);
+    right_image = frame.colRange(frame.cols / 2, frame.cols);
+}
+
 void StereoSystem::run()
 {
     // Open video stream from camera.
@@ -77,62 +113,37 @@ void StereoSystem::run()
     cap.set(cv::CAP_PROP_FRAME_WIDTH, width_ * 2);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, height_);
 
-    // Assuming cap is your cv::VideoCapture object
-    double width = cap.get(cv::CAP_PROP_FRAME_WIDTH);
-    double height = cap.get(cv::CAP_PROP_FRAME_HEIGHT);
-    std::cout << "Current Resolution: " << width << "x" << height << std::endl;
+    calibrateStereoCameras();
 
-    cv::Mat frame;
-    cv::Mat leftImage, rightImage;
-    cv::Mat R1, R2, P1, P2, Q;
-    cv::Mat rectMapL1, rectMapL2, rectMapR1, rectMapR2;
-    cv::Mat rectLeft, rectRight;
-
-    cv::stereoRectify(left_camera_.getIntrinsicMatrix(), left_camera_.getDistortionCoeffs(),
-                      right_camera_.getIntrinsicMatrix(), right_camera_.getDistortionCoeffs(),
-                      cv::Size(width_, height_),
-                      R_, T_, R1, R2, P1, P2, Q,
-                      cv::CALIB_ZERO_DISPARITY, 0, cv::Size(width_, height_));
+    cv::Mat ori_left, ori_right;    // original images
+    cv::Mat rect_left, rect_right;  // stereo rectified images
 
     while (true)
     {
-        // Capture frame from camera.
-        cap >> frame;
-
-        // Cut the frame into two images.
-        leftImage = frame.colRange(0, frame.cols / 2);
-        rightImage = frame.colRange(frame.cols / 2, frame.cols);
-
-        // Rectify the images.
-        cv::initUndistortRectifyMap(left_camera_.getIntrinsicMatrix(), left_camera_.getDistortionCoeffs(),
-                                    R1, P1, cv::Size(width_, height_),
-                                    CV_32FC1, rectMapL1, rectMapL2);
-        cv::initUndistortRectifyMap(right_camera_.getIntrinsicMatrix(), right_camera_.getDistortionCoeffs(),
-                                    R2, P2, cv::Size(width_, height_),
-                                    CV_32FC1, rectMapR1, rectMapR2);
-
-        cv::remap(leftImage, rectLeft, rectMapL1, rectMapL2, cv::INTER_LINEAR);
-        cv::remap(rightImage, rectRight, rectMapR1, rectMapR2, cv::INTER_LINEAR);
+        captureImages(cap, ori_left, ori_right);
+        rectifyImages(ori_left, ori_right, rect_left, rect_right);
 
         // Show rectified images.
-        cv::imshow("Rectified Left", rectLeft);
-        cv::imshow("Rectified Right", rectRight);
+        cv::imshow("Rectified Left", rect_left);
+        cv::imshow("Rectified Right", rect_right);
+
+        // TODO: Compute disparity map.
+        //SAD
+        // Wait for a keystroke in the window
+        cv::waitKey(30);
+        DisparityMapGenerator disparity_map_generator{ rect_left ,rect_right ,DisparityMapGenerator::SGBM };
+        disparity_map_generator.computeDisparity();
+        disparity_map_generator.displayDisparity();
 
         // Show additional debug/educational figures.
-        if (do_visualize_)
+        if (enable_debug_)
         {
-            if (!leftImage.empty())
-            {
-                cv::imshow("Original Left", leftImage);
-            }
-            if (!rightImage.empty())
-            {
-                cv::imshow("Original Right", rightImage);
-            }
+            // if (!frame.empty())      { cv::imshow("Original", frame); }
+            if (!ori_left.empty())  { cv::imshow("Original Left", ori_left); }
+            if (!ori_right.empty()) { cv::imshow("Original Right", ori_right); }
         }
-
-        // Update the windows.
-        cv::waitKey(1);
+        cv::waitKey(30);
+        // Wait for a keystroke in the window
     }
 
     /*
