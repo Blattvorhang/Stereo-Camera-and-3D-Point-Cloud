@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <string>
 #include "../include/stereo_system.h"
+#include "../include/disparity.h"
 
 int main(int argc, char *argv[])
 {
@@ -63,7 +64,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        StereoSystem stereo_system(param_path, camera_id, width, height, enable_debug);
+        StereoSystem stereo_system(param_path, camera_id, width, height,DisparityMapGenerator::SGBM, enable_debug);
         stereo_system.run();
     }
     catch (const std::exception &e)
