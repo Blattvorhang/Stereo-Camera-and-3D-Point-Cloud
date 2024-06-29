@@ -109,15 +109,6 @@ void StereoSystem::captureImages(cv::VideoCapture &cap, cv::Mat &left_image, cv:
     right_image = frame.colRange(frame.cols / 2, frame.cols);
 }
 
-void StereoSystem::computeDisparity(const cv::Mat &left_image, const cv::Mat &right_image, cv::Mat &disparity)
-{
-    DisparityMapGenerator disparity_map_generator(left_image, right_image, DisparityMapGenerator::SGBM);
-    disparity_map_generator.computeDisparity(disparity);
-    if (enable_debug_) {
-        disparity_map_generator.displayDisparity();
-    }
-}
-
 void StereoSystem::computeDepthMap(const cv::Mat &disparity, cv::Mat &depth_map)
 {
     
@@ -171,8 +162,10 @@ void StereoSystem::run()
             rectifyImages(ori_left, ori_right, rect_left, rect_right);
         } else { 
             // Load images from file.
-            rect_left = cv::imread("../test_imgs/rectified_left.png");
-            rect_right = cv::imread("../test_imgs/rectified_right.png");
+            /*rect_left = cv::imread("../test_imgs/rectified_left.png");
+            rect_right = cv::imread("../test_imgs/rectified_right.png");*/
+            rect_left = cv::imread("../test_imgs/im2.png");
+            rect_right = cv::imread("../test_imgs/im6.png");
         }
 
         // Show rectified images.
@@ -183,7 +176,9 @@ void StereoSystem::run()
         // cv::imwrite("../test_imgs/rectified_left.png", rect_left);
         // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
-        computeDisparity(rect_left, rect_right, disparity_map);
+        DisparityMapGenerator disparity_map_generator(rect_left, rect_right, DisparityMapGenerator::SGM);
+        disparity_map_generator.computeDisparity(disparity_map);
+        disparity_map_generator.displayDisparity();
 
         computeDepthMap(disparity_map, depth_map);
 

@@ -4,6 +4,7 @@
 #include <cassert>
 #include <chrono>
 #include <stdint.h>
+#include <iostream>
 #include <cstdio>
 #include <cstring>
 #include "../include/semi_global_matching.h"
@@ -126,7 +127,7 @@ bool SemiGlobalMatching::Match(const uint8_t* img_left, const uint8_t* img_right
 
     auto end = steady_clock::now();
     auto tt = duration_cast<milliseconds>(end - start);
-    printf("computing cost! timing :	%lf s\n", tt.count() / 1000.0);
+	std::cout << "computing cost! timing : " << tt.count() / 1000.0 << " s" << std::endl;
     start = steady_clock::now();
 
     // 代价聚合
@@ -134,7 +135,7 @@ bool SemiGlobalMatching::Match(const uint8_t* img_left, const uint8_t* img_right
 
     end = steady_clock::now();
     tt = duration_cast<milliseconds>(end - start);
-    printf("cost aggregating! timing :	%lf s\n", tt.count() / 1000.0);
+	std::cout << "cost aggregating! timing : " << tt.count() / 1000.0 << " s" << std::endl;
     start = steady_clock::now();
 
     // 视差计算
@@ -142,7 +143,7 @@ bool SemiGlobalMatching::Match(const uint8_t* img_left, const uint8_t* img_right
 
     end = steady_clock::now();
     tt = duration_cast<milliseconds>(end - start);
-    printf("computing disparities! timing :	%lf s\n", tt.count() / 1000.0);
+	std::cout << "computing disparities! timing : " << tt.count() / 1000.0 << " s" << std::endl;
     start = steady_clock::now();
 
     // 左右一致性检查
@@ -168,7 +169,7 @@ bool SemiGlobalMatching::Match(const uint8_t* img_left, const uint8_t* img_right
 
     end = steady_clock::now();
     tt = duration_cast<milliseconds>(end - start);
-    printf("postprocessing! timing :        %lf s\n", tt.count() / 1000.0);
+	std::cout << "postprocessing! timing : " << tt.count() / 1000.0 << " s" << std::endl;
     start = steady_clock::now();
 
     // 输出视差图
@@ -530,7 +531,7 @@ void SemiGlobalMatching::FillHolesInDispMap()
 	float angle2[8] = { pi, 5 * pi / 4, 3 * pi / 2, 7 * pi / 4, 0, pi / 4, pi / 2, 3 * pi / 4 };
 	float *angle = angle1;
     // 最大搜索行程，没有必要搜索过远的像素
-    const int32_t max_search_length = 1.0*std::max(abs(option_.max_disparity), abs(option_.min_disparity));
+    const int32_t max_search_length = (int)1.0*std::max(abs(option_.max_disparity), abs(option_.min_disparity));
 
 	float* disp_ptr = disp_left_;
 	for (int32_t k = 0; k < 3; k++) {
