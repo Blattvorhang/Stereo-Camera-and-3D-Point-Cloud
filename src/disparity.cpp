@@ -1,5 +1,4 @@
-﻿#include <opencv2/calib3d.hpp>
-#include "../include/disparity.h"
+﻿#include "../include/disparity.h"
 #include "../include/semi_global_matching.h"
 #include <opencv2/calib3d.hpp>
 #include <chrono>
@@ -36,7 +35,7 @@ void DisparityMapGenerator::preprocessImage(cv::Mat& image, bool useGaussianBlur
     }
 }
 
-void DisparityMapGenerator::computeDisparity() {
+void DisparityMapGenerator::computeDisparity(cv::Mat &disparity) {
     cv::imshow("preprocess Left", left_image_);
     cv::imshow("preprocess Right", right_image_);
     switch (method_) {
@@ -57,6 +56,8 @@ void DisparityMapGenerator::computeDisparity() {
     default:
         throw std::invalid_argument("Unsupported disparity method");
     }
+
+    disparity = disparity_;
 }
 
 void DisparityMapGenerator::displayDisparity() {
@@ -75,7 +76,7 @@ void DisparityMapGenerator::displayDisparity() {
     cv::bilateralFilter(dispColor, dispBilateral, 9, 75, 75);
 
     // 显示处理后的视差图
-    cv::namedWindow("Enhanced Disparity Map", cv::WINDOW_NORMAL);
+    // cv::namedWindow("Enhanced Disparity Map", cv::WINDOW_NORMAL);
     cv::imshow("Enhanced Disparity Map", dispBilateral);
 }
 
@@ -92,9 +93,25 @@ void DisparityMapGenerator::computeBM() {
 void DisparityMapGenerator::computeSGBM() {
     // 使用半全局块匹配（Semi-Global Block Matching）方法计算视差图
     cv::Mat disparity;
-    int numDisparities = 16 * 5;  // 视差范围
+    //int numDisparities = ((left_image_.cols / 8) + 15) & -16;//视差搜索范围
     int blockSize = 16;  // 块大小
-    cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(0, numDisparities, blockSize);
+    cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(); //0, numDisparities, blockSize);
+
+    int winSize = 10;
+    int numDisparities = ((left_image_.cols / 8) + 15) & -16;//视差搜索范围
+
+    sgbm->setPreFilterCap(31);//预处理滤波器截断值
+    sgbm->setBlockSize(winSize);//SAD窗口大小
+    sgbm->setP1(8*winSize*winSize);//控制视差平滑度第一参数
+    sgbm->setP2(32*winSize*winSize);//控制视差平滑度第二参数
+    sgbm->setMinDisparity(0);//最小视差
+    sgbm->setNumDisparities(numDisparities);//视差搜索范围
+    sgbm->setUniquenessRatio(10);//视差唯一性百分比
+    sgbm->setSpeckleWindowSize(200);//检查视差连通区域变化度的窗口大小
+    sgbm->setSpeckleRange(1);//视差变化阈值
+    sgbm->setDisp12MaxDiff(0);//左右视差图最大容许差异
+    sgbm->setMode(cv::StereoSGBM::MODE_SGBM);//采用全尺寸双通道动态编程算法
+
     sgbm->compute(left_image_, right_image_, disparity);
     this->disparity_ = disparity;
 }

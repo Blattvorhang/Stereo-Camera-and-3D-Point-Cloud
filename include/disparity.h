@@ -21,8 +21,9 @@ public:
         FBS
     };
     DisparityMapGenerator(const cv::Mat& leftImage, const cv::Mat& rightImage, DisparityMethod method);
-    void computeDisparity();
+    void computeDisparity(cv::Mat &disparity);
     void displayDisparity();  // 将视差图归一化并显示
+    
 private:
     cv::Mat left_image_;
     cv::Mat right_image_;

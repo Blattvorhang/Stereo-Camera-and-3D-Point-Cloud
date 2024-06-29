@@ -3,10 +3,6 @@
 
 #include <vector>
 #include <stdint.h>
-
-/**
- * \brief SemiGlobalMatching类（General implementation of Semi-Global Matching）
- */
 constexpr auto Invalid_Float = std::numeric_limits<float>::infinity();
 
 class SemiGlobalMatching
@@ -27,18 +23,13 @@ public:
 		uint8_t	num_paths;			// 聚合路径数 4 and 8
 		int32_t  min_disparity;		// 最小视差
 		int32_t	max_disparity;		// 最大视差
-
 		CensusSize census_size;		// census窗口尺寸
-
 		bool	is_check_unique;	// 是否检查唯一性
 		float	uniqueness_ratio;	// 唯一性约束阈值 （最小代价-次最小代价)/最小代价 > 阈值 为有效像素
-
 		bool	is_check_lr;		// 是否检查左右一致性
 		float	lrcheck_thres;		// 左右一致性约束阈值
-
 		bool	is_remove_speckles;	// 是否移除小的连通区
 		int		min_speckle_aera;	// 最小的连通区面积（像素数）
-
 		bool	is_fill_holes;		// 是否填充视差空洞
 
 		// P1,P2 

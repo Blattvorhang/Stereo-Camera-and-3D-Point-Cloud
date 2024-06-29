@@ -90,3 +90,4 @@ classDiagram
 ## References
 - [Stereo Camera Calibration (from MATLAB to OpenCV)](https://zhuanlan.zhihu.com/p/153329285)
 - [Stereo Camera Calibration](https://www.cnblogs.com/champrin/p/17034043.html)
+- [Depth Map in Stereo Matching](https://www.cnblogs.com/riddick/p/8486223.html)

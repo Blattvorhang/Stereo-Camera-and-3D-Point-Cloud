@@ -24,7 +24,6 @@ add_executable(${PROJECT_NAME}
     src/disparity.cpp
     src/semi_global_matching.cpp
     src/sgm_util.cpp
-    src/stdafx.cpp
 )
 
 # add the include directory

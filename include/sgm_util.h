@@ -1,9 +1,7 @@
 ﻿#ifndef SGM_UTIL_H
 #define SGM_UTIL_H
 
-#ifndef SAFE_DELETE
 #define SAFE_DELETE(P) {if(P) delete[](P);(P)=nullptr;}
-#endif
 #include <stdint.h>
 
 namespace sgm_util

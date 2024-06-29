@@ -14,14 +14,11 @@ public:
                     const cv::Mat &distortion_coeffs);
     Camera();
 
-    /// \return The intrinsic calibration matrix.
     cv::Mat getIntrinsicMatrix() const;
-
-    /// \return The distortion coefficients.
     cv::Mat getDistortionCoeffs() const;
-
-    /// \return The camera projection matrix.
     cv::Mat getProjectionMatrix() const;
+
+    void setRectificationMatrices(const cv::Mat &R, const cv::Mat &P);
 
     /*
     /// \brief Projects a world point into pixel coordinates.
@@ -42,6 +39,8 @@ private:
     cv::Mat K_;
     cv::Mat distortion_coeffs_;
     cv::Mat projection_matrix_;
+    cv::Mat rectified_R_;
+    cv::Mat rectified_P_;
 };
 
 #endif // CAMERA_H

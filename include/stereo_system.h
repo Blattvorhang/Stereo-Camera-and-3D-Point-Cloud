@@ -29,6 +29,9 @@ public:
     void rectifyImages(const cv::Mat &left_image, const cv::Mat &right_image,
                        cv::Mat &rectified_left_image, cv::Mat &rectified_right_image);
 
+    void computeDisparity(const cv::Mat &left_image, const cv::Mat &right_image, cv::Mat &disparity);
+    void computeDepthMap(const cv::Mat &disparity, cv::Mat &depth_map);
+
 private:
     /// @brief Checks if the matrix has the expected size.
     /// @param mat

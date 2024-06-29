@@ -75,6 +75,14 @@ void StereoSystem::calibrateStereoCameras()
                       cv::Size(width_, height_),
                       R_, T_, R1_, R2_, P1_, P2_, Q_,
                       cv::CALIB_ZERO_DISPARITY, 0, cv::Size(width_, height_));
+    if (enable_debug_)
+    {
+        std::cout << "R1: " << std::endl << R1_ << std::endl;
+        std::cout << "R2: " << std::endl << R2_ << std::endl;
+        std::cout << "P1: " << std::endl << P1_ << std::endl;
+        std::cout << "P2: " << std::endl << P2_ << std::endl;
+        std::cout << "Q: " << std::endl << Q_ << std::endl;
+    }
 }
 
 void StereoSystem::rectifyImages(const cv::Mat &ori_left, const cv::Mat &ori_right,
@@ -101,6 +109,36 @@ void StereoSystem::captureImages(cv::VideoCapture &cap, cv::Mat &left_image, cv:
     right_image = frame.colRange(frame.cols / 2, frame.cols);
 }
 
+void StereoSystem::computeDisparity(const cv::Mat &left_image, const cv::Mat &right_image, cv::Mat &disparity)
+{
+    DisparityMapGenerator disparity_map_generator(left_image, right_image, DisparityMapGenerator::SGBM);
+    disparity_map_generator.computeDisparity(disparity);
+    if (enable_debug_) {
+        disparity_map_generator.displayDisparity();
+    }
+}
+
+void StereoSystem::computeDepthMap(const cv::Mat &disparity, cv::Mat &depth_map)
+{
+    
+    cv::Mat depth_map_3d;
+    cv::reprojectImageTo3D(disparity, depth_map_3d, Q_, true);
+
+    // Extract the Z coordinate from the 3D image.
+    std::vector<cv::Mat> xyz;
+    cv::split(depth_map_3d, xyz);
+    depth_map = xyz[2];
+    
+    // Alternative method to calculate the depth map.
+    // Formula: Z = f * T / disp
+    // float baseline = 1 / Q_.at<double>(3, 2);
+    // float focal_length = Q_.at<double>(2, 3);
+    // depth_map = focal_length * baseline / disparity;
+
+    // Eliminate invalid depth values.
+    depth_map.setTo(0, disparity < 0);
+}
+
 void StereoSystem::run()
 {
     // Open video stream from camera.
@@ -120,6 +158,10 @@ void StereoSystem::run()
 
     cv::Mat ori_left, ori_right;   // original images
     cv::Mat rect_left, rect_right; // stereo rectified images
+    cv::Mat disparity_map;         // disparity map
+    cv::Mat depth_map;             // depth map
+    cv::Mat depth_map_8u;          // 8-bit depth map
+    cv::Mat depth_map_normalized;  // normalized depth map
 
     while (true)
     {
@@ -141,9 +183,16 @@ void StereoSystem::run()
         // cv::imwrite("../test_imgs/rectified_left.png", rect_left);
         // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
-        DisparityMapGenerator disparity_map_generator(rect_left, rect_right, DisparityMapGenerator::SGM);
-        disparity_map_generator.computeDisparity();
-        disparity_map_generator.displayDisparity();
+        computeDisparity(rect_left, rect_right, disparity_map);
+
+        computeDepthMap(disparity_map, depth_map);
+
+        double max_depth = 1600; // Limit the maximum depth value (unit: mm)
+        
+        // convert the depth map to 8-bit for visualization
+        depth_map.convertTo(depth_map_8u, CV_8U, 255.0 / max_depth);
+        // cv::normalize(depth_map_8u, depth_map_normalized, 0.0, 255.0, cv::NORM_MINMAX, CV_8U);
+        cv::imshow("Depth Map", depth_map_8u);
         
         // Show additional debug/educational figures.
         if (enable_debug_)

@@ -1,10 +1,9 @@
-﻿#include "../include/sgm_util.h"
-#include <algorithm>
+﻿#include <algorithm>
 #include <cassert>
 #include <vector>
 #include <queue>
-#include 
-#define uint8_t_MAX        0xffui8
+#include <cstring>
+#include "../include/sgm_util.h"
 
 void sgm_util::census_transform_5x5(const uint8_t* source, uint32_t* census, const int32_t& width, const int32_t& height)
 {
@@ -123,7 +122,7 @@ void sgm_util::CostAggregateLeftRight(const uint8_t* img_data, const int32_t& wi
 		uint8_t gray_last = *img_row;
 
 		// 路径上上个像素的代价数组，多两个元素是为了避免边界溢出（首尾各多一个）
-		std::vector<uint8_t> cost_last_path(disp_range + 2, uint8_t_MAX);
+		std::vector<uint8_t> cost_last_path(disp_range + 2, UINT8_MAX);
 
 		// 初始化：第一个像素的聚合代价值等于初始代价值
 		memcpy(cost_aggr_row, cost_init_row, disp_range * sizeof(uint8_t));
@@ -133,7 +132,7 @@ void sgm_util::CostAggregateLeftRight(const uint8_t* img_data, const int32_t& wi
 		img_row += direction;
 
 		// 路径上上个像素的最小代价值
-		uint8_t mincost_last_path = uint8_t_MAX;
+		uint8_t mincost_last_path = UINT8_MAX;
 		for (auto cost : cost_last_path) {
 			mincost_last_path = std::min(mincost_last_path, cost);
 		}
@@ -141,7 +140,7 @@ void sgm_util::CostAggregateLeftRight(const uint8_t* img_data, const int32_t& wi
 		// 自方向上第2个像素开始按顺序聚合
 		for (int32_t j = 0; j < width - 1; j++) {
 			gray = *img_row;
-			uint8_t min_cost = uint8_t_MAX;
+			uint8_t min_cost = UINT8_MAX;
 			for (int32_t d = 0; d < disp_range; d++){
 				// Lr(p,d) = C(p,d) + min( Lr(p-r,d), Lr(p-r,d-1) + P1, Lr(p-r,d+1) + P1, min(Lr(p-r))+P2 ) - min(Lr(p-r))
 				const uint8_t  cost = cost_init_row[d];
@@ -200,7 +199,7 @@ void sgm_util::CostAggregateUpDown(const uint8_t* img_data, const int32_t& width
 		uint8_t gray_last = *img_col;
 
 		// 路径上上个像素的代价数组，多两个元素是为了避免边界溢出（首尾各多一个）
-		std::vector<uint8_t> cost_last_path(disp_range + 2, uint8_t_MAX);
+		std::vector<uint8_t> cost_last_path(disp_range + 2, UINT8_MAX);
 
 		// 初始化：第一个像素的聚合代价值等于初始代价值
 		memcpy(cost_aggr_col, cost_init_col, disp_range * sizeof(uint8_t));
@@ -210,7 +209,7 @@ void sgm_util::CostAggregateUpDown(const uint8_t* img_data, const int32_t& width
 		img_col += direction * width;
 
 		// 路径上上个像素的最小代价值
-		uint8_t mincost_last_path = uint8_t_MAX;
+		uint8_t mincost_last_path = UINT8_MAX;
 		for (auto cost : cost_last_path) {
 			mincost_last_path = std::min(mincost_last_path, cost);
 		}
@@ -218,7 +217,7 @@ void sgm_util::CostAggregateUpDown(const uint8_t* img_data, const int32_t& width
 		// 自方向上第2个像素开始按顺序聚合
 		for (int32_t i = 0; i < height - 1; i ++) {
 			gray = *img_col;
-			uint8_t min_cost = uint8_t_MAX;
+			uint8_t min_cost = UINT8_MAX;
 			for (int32_t d = 0; d < disp_range; d++) {
 				// Lr(p,d) = C(p,d) + min( Lr(p-r,d), Lr(p-r,d-1) + P1, Lr(p-r,d+1) + P1, min(Lr(p-r))+P2 ) - min(Lr(p-r))
 				const uint8_t  cost = cost_init_col[d];
@@ -278,7 +277,7 @@ void sgm_util::CostAggregateDagonal_1(const uint8_t* img_data, const int32_t& wi
 		auto img_col = (is_forward) ? (img_data + j) : (img_data + (height - 1) * width + j);
 
 		// 路径上上个像素的代价数组，多两个元素是为了避免边界溢出（首尾各多一个）
-		std::vector<uint8_t> cost_last_path(disp_range + 2, uint8_t_MAX);
+		std::vector<uint8_t> cost_last_path(disp_range + 2, UINT8_MAX);
 
 		// 初始化：第一个像素的聚合代价值等于初始代价值
 		memcpy(cost_aggr_col, cost_init_col, disp_range * sizeof(uint8_t));
@@ -314,7 +313,7 @@ void sgm_util::CostAggregateDagonal_1(const uint8_t* img_data, const int32_t& wi
 		}
 
 		// 路径上上个像素的最小代价值
-		uint8_t mincost_last_path = uint8_t_MAX;
+		uint8_t mincost_last_path = UINT8_MAX;
 		for (auto cost : cost_last_path) {
 			mincost_last_path = std::min(mincost_last_path, cost);
 		}
@@ -322,7 +321,7 @@ void sgm_util::CostAggregateDagonal_1(const uint8_t* img_data, const int32_t& wi
 		// 自方向上第2个像素开始按顺序聚合
 		for (int32_t i = 0; i < height - 1; i ++) {
 			gray = *img_col;
-			uint8_t min_cost = uint8_t_MAX;
+			uint8_t min_cost = UINT8_MAX;
 			for (int32_t d = 0; d < disp_range; d++) {
 				// Lr(p,d) = C(p,d) + min( Lr(p-r,d), Lr(p-r,d-1) + P1, Lr(p-r,d+1) + P1, min(Lr(p-r))+P2 ) - min(Lr(p-r))
 				const uint8_t  cost = cost_init_col[d];
@@ -404,7 +403,7 @@ void sgm_util::CostAggregateDagonal_2(const uint8_t* img_data, const int32_t& wi
 		auto img_col = (is_forward) ? (img_data + j) : (img_data + (height - 1) * width + j);
 
 		// 路径上上个像素的代价数组，多两个元素是为了避免边界溢出（首尾各多一个）
-		std::vector<uint8_t> cost_last_path(disp_range + 2, uint8_t_MAX);
+		std::vector<uint8_t> cost_last_path(disp_range + 2, UINT8_MAX);
 
 		// 初始化：第一个像素的聚合代价值等于初始代价值
 		memcpy(cost_aggr_col, cost_init_col, disp_range * sizeof(uint8_t));
@@ -440,7 +439,7 @@ void sgm_util::CostAggregateDagonal_2(const uint8_t* img_data, const int32_t& wi
 		}
 
 		// 路径上上个像素的最小代价值
-		uint8_t mincost_last_path = uint8_t_MAX;
+		uint8_t mincost_last_path = UINT8_MAX;
 		for (auto cost : cost_last_path) {
 			mincost_last_path = std::min(mincost_last_path, cost);
 		}
@@ -448,7 +447,7 @@ void sgm_util::CostAggregateDagonal_2(const uint8_t* img_data, const int32_t& wi
 		// 自路径上第2个像素开始按顺序聚合
 		for (int32_t i = 0; i < height - 1; i++) {
 			gray = *img_col;
-			uint8_t min_cost = uint8_t_MAX;
+			uint8_t min_cost = UINT8_MAX;
 			for (int32_t d = 0; d < disp_range; d++) {
 				// Lr(p,d) = C(p,d) + min( Lr(p-r,d), Lr(p-r,d-1) + P1, Lr(p-r,d+1) + P1, min(Lr(p-r))+P2 ) - min(Lr(p-r))
 				const uint8_t  cost = cost_init_col[d];
