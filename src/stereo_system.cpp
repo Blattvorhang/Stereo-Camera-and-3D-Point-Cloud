@@ -165,10 +165,10 @@ void StereoSystem::run()
             rectifyImages(ori_left, ori_right, rect_left, rect_right);
         } else { 
             // Load images from file.
-            /*rect_left = cv::imread("../test_imgs/rectified_left.png");
-            rect_right = cv::imread("../test_imgs/rectified_right.png");*/
-            rect_left = cv::imread("../test_imgs/im2.png");
-            rect_right = cv::imread("../test_imgs/im6.png");
+            rect_left = cv::imread("../test_imgs/rectified_left.png");
+            rect_right = cv::imread("../test_imgs/rectified_right.png");
+            // rect_left = cv::imread("../test_imgs/im2.png");
+            // rect_right = cv::imread("../test_imgs/im6.png");
         }
 
         // Show rectified images.
@@ -185,7 +185,7 @@ void StereoSystem::run()
 
         computeDepthMap(disparity_map, depth_map);
 
-        double max_depth = 1600; // Limit the maximum depth value (unit: mm)
+        double max_depth = 1200; // Limit the maximum depth value (unit: mm)
         
         // convert the depth map to 8-bit for visualization
         depth_map.convertTo(depth_map_8u, CV_8U, 255.0 / max_depth);
@@ -206,7 +206,7 @@ void StereoSystem::run()
             }
         }
 
-        if (cv::waitKey(1) == 27) // Break on ESC
+        if (cv::waitKey(30) == 27) // Break on ESC
         {
             break;
         }
