@@ -4,6 +4,7 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include "../include/camera.h"
+#include "../include/disparity.h"
 
 /// \brief Whole stereo system class.
 class StereoSystem
@@ -19,6 +20,7 @@ public:
                           int camera_id = 0,
                           int single_camera_width = 1280,
                           int single_camera_height = 720,
+                          DisparityMapGenerator::DisparityMethod method = DisparityMapGenerator::SGBM,
                           bool enable_debug = false);
 
     /// \brief Runs the stereo system.
@@ -44,6 +46,7 @@ private:
     int camera_id_;
     int width_;
     int height_;
+    DisparityMapGenerator::DisparityMethod method;
     bool enable_debug_;
     Camera left_camera_;
     Camera right_camera_;

@@ -9,10 +9,13 @@ StereoSystem::StereoSystem(const std::string &param_path,
                            int camera_id,
                            int single_camera_width,
                            int single_camera_height,
+                           DisparityMapGenerator::DisparityMethod method,
                            bool enable_debug)
-    : camera_id_{camera_id},
+	:
+      camera_id_{camera_id},
       width_{single_camera_width},
       height_{single_camera_height},
+      method{ method },
       enable_debug_{enable_debug}
 {
     readCalibrationParameters(param_path);
@@ -176,7 +179,7 @@ void StereoSystem::run()
         // cv::imwrite("../test_imgs/rectified_left.png", rect_left);
         // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
-        DisparityMapGenerator disparity_map_generator(rect_left, rect_right, DisparityMapGenerator::SGM);
+        DisparityMapGenerator disparity_map_generator(rect_left, rect_right, this->method);
         disparity_map_generator.computeDisparity(disparity_map);
         disparity_map_generator.displayDisparity();
 
