@@ -5,46 +5,57 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <limits>
+#include <omp.h>
 using namespace std::chrono;
 
 DisparityMapGenerator::DisparityMapGenerator(const cv::Mat& leftImage, const cv::Mat& rightImage, DisparityMethod method)
     : left_image_(leftImage), right_image_(rightImage), method_(method) {
     numDisparities_ = ((left_image_.cols / 8) + 15) & -16;  // 视差搜索范围
-    preprocessImage(left_image_);
-    preprocessImage(right_image_);
 }
 
 // 函数对单个图像进行预处理
 void DisparityMapGenerator::preprocessImage(cv::Mat& image, bool useGaussianBlur) {
+
+    // 调整图像大小
+    cv::resize(image, image, cv::Size((int)image.cols / 2, (int)image.rows / 2));
+
     // 将图像转换为灰度图
     if (image.channels() > 1) {
         cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
     }
-    // 调整图像大小到640x360
-    //cv::resize(image, image, cv::Size(640, 360));
 
     // 转换图像格式到8位无符号整数类型
     if (image.type() != CV_8U) {
         image.convertTo(image, CV_8U);
     }
-    
+
     // 自适应直方图均衡化以增强图像对比度
     cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
     clahe->setClipLimit(4.0);
     clahe->apply(image, image);
+
+    // 应用高斯模糊以减少图像噪声
+    if (useGaussianBlur) {
+        cv::GaussianBlur(image, image, cv::Size(5, 5), 0);
+    }
 
     // 边缘保留滤波
     cv::Mat temp;
     cv::ximgproc::guidedFilter(image, image, temp, 8, 0.1);
     image = temp;
 
-    // 应用高斯模糊以减少图像噪声
-    if (useGaussianBlur) {
-        cv::GaussianBlur(image, image, cv::Size(5, 5), 0);
-    }
+    // 亮度均匀化 (使用形态学闭操作进行背景提取和亮度均匀化)
+    cv::Mat background;
+    cv::morphologyEx(image, background, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15)));
+    cv::Mat uniformLight;
+    cv::absdiff(image, background, uniformLight);
+    image = uniformLight;
 }
 
 void DisparityMapGenerator::computeDisparity(cv::Mat &disparity) {
+    preprocessImage(left_image_);
+	preprocessImage(right_image_);
     cv::imshow("preprocess Left", left_image_);
     cv::imshow("preprocess Right", right_image_);
     switch (method_) {
@@ -54,32 +65,40 @@ void DisparityMapGenerator::computeDisparity(cv::Mat &disparity) {
     case SGBM:
         computeSGBM();
         break;
-    case NCC:
-        computeNCC();
-        break;
     case SGM:
         computeSGM();
         break;
-    case RG:
-        computeRG();
-        break;
-        // 其他方法可以根据需要添加
-
     default:
         throw std::invalid_argument("Unsupported disparity method");
     }
-    applyLRCheck();
-    displayLRCheckResult();
     enhanceSubpixel();
+    // 将视差图转换为 CV_32F
+    disparity.convertTo(disparity, CV_32F, 1.0 / 16.0); // 假设视差图最初是 CV_16S 类型
+
+    // 重建右图像
+    cv::Mat reconstructedRightImage = reconstructRightImage(left_image_, disparity);
+
+    // 计算光度一致性误差
+    double mse = computePhotometricConsistencyMSE(reconstructedRightImage, right_image_);
+    double mae = computePhotometricConsistencyMAE(reconstructedRightImage, right_image_);
+
+    std::cout << "Photometric Consistency MSE: " << mse << std::endl;
+    std::cout << "Photometric Consistency MAE: " << mae << std::endl;
     disparity = disparity_;
 }
 
 void DisparityMapGenerator::displayDisparity() {
-    // 将视差图从CV_16S转换到CV_8U
+    // 检查视差图是否为空
+    if (disparity_.empty()) {
+        std::cerr << "Disparity map is empty!" << std::endl;
+        return;
+    }
+
+    // 将视差图从CV_32F转换到CV_8U
     cv::Mat disp8;
     double minVal, maxVal;
     cv::minMaxLoc(disparity_, &minVal, &maxVal);
-    disparity_.convertTo(disp8, CV_8U, 255 / (maxVal - minVal), -minVal * 255 / (maxVal - minVal));
+    disparity_.convertTo(disp8, CV_8U, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
 
     // 计算积分图和对应的像素点个数图像
     cv::Mat integralImage, pixelCount;
@@ -124,17 +143,22 @@ void DisparityMapGenerator::displayDisparity() {
     cv::applyColorMap(dispGuided, dispColor, cv::COLORMAP_JET);
 
     // 显示处理后的视差图
-    // cv::namedWindow("Enhanced Disparity Map", cv::WINDOW_NORMAL);
     cv::imshow("Enhanced Disparity Map", dispColor);
 }
 
 void DisparityMapGenerator::displayLRCheckResult() {
+    // 检查 lrCheckedDisparity_ 是否为空
+    if (lrCheckedDisparity_.empty()) {
+        std::cerr << "LR Checked Disparity is empty!" << std::endl;
+        return;
+    }
+
     // 创建一个与 lrCheckedDisparity_ 相同大小的单通道图像
     cv::Mat result = cv::Mat::zeros(lrCheckedDisparity_.size(), CV_8UC1);
 
     for (int y = 0; y < lrCheckedDisparity_.rows; ++y) {
         for (int x = 0; x < lrCheckedDisparity_.cols; ++x) {
-            if (lrCheckedDisparity_.at<float>(y, x) != -1) {
+            if (lrCheckedDisparity_.at<float>(y, x) != -1.0f) {
                 result.at<uchar>(y, x) = 255; // 有效视差值显示为白色
             }
             else {
@@ -148,14 +172,24 @@ void DisparityMapGenerator::displayLRCheckResult() {
 }
 
 void DisparityMapGenerator::computeBM() {
-    // 使用块匹配（Block Matching）方法计算视差图
-    cv::Mat disparity;
-    int numDisparities = 16 * 5;  // 视差范围
-    int blockSize = 15;  // 块大小
-    cv::Ptr<cv::StereoBM> bm = cv::StereoBM::create(numDisparities, blockSize);
-    bm->compute(left_image_, right_image_, disparity);
-    this->disparity_ = disparity;
+    if (left_image_.empty() || right_image_.empty()) {
+        std::cerr << "One or both input images are empty!" << std::endl;
+        return;
+    }
+
+    int numDisparities = 16 * 5;
+    int blockSize = 15;
+
+    cv::Ptr<cv::StereoBM> stereoBM = cv::StereoBM::create(numDisparities, blockSize);
+    cv::Mat disparity16S;
+    stereoBM->compute(left_image_, right_image_, disparity16S);
+
+    // 将视差图转换为浮点数类型
+    cv::Mat disparity32F;
+    disparity16S.convertTo(disparity32F, CV_32F, 1.0 / 16.0);
+    disparity_ = disparity32F;
 }
+
 void DisparityMapGenerator::computeSGBM() {
     cv::Mat leftDisparity, rightDisparity;
     int winSize = 5;  // 块大小
@@ -193,156 +227,6 @@ void DisparityMapGenerator::computeSGBM() {
 
     this->disparity_ = leftDisparity;
     this->right_disparity_ = rightDisparity;
-
-}
-
-
-
-void DisparityMapGenerator::computeNCC() {
-    const int windowSize = 5;
-    int halfWindow = windowSize / 2;
-    int maxDisparity = 30;
-    int numThreads = std::thread::hardware_concurrency();
-
-    disparity_ = cv::Mat(left_image_.size(), CV_32F, cv::Scalar(0));
-
-    auto computeNCCForRow = [&](int yStart, int yEnd) {
-        for (int y = yStart; y < yEnd; ++y) {
-            for (int x = halfWindow; x < left_image_.cols - halfWindow; ++x) {
-                float maxNCC = -1.0;
-                int bestDisparity = 0;
-
-                if (x - halfWindow < 0 || x + halfWindow >= left_image_.cols || y - halfWindow < 0 || y + halfWindow >= left_image_.rows) {
-                    continue;
-                }
-
-                cv::Rect leftRect(x - halfWindow, y - halfWindow, windowSize, windowSize);
-                cv::Mat leftPatch = left_image_(leftRect);
-                double leftMean = cv::mean(leftPatch)[0];
-
-                for (int d = 0; d <= maxDisparity; ++d) {
-                    int rightX = x - d;
-                    if (rightX < halfWindow) break;
-
-                    cv::Rect rightRect(rightX - halfWindow, y - halfWindow, windowSize, windowSize);
-                    cv::Mat rightPatch = right_image_(rightRect);
-                    double rightMean = cv::mean(rightPatch)[0];
-
-                    cv::Mat leftDiff = leftPatch - leftMean;
-                    cv::Mat rightDiff = rightPatch - rightMean;
-
-                    double numerator = cv::sum(leftDiff.mul(rightDiff))[0];
-                    double leftSqrSum = cv::sum(leftDiff.mul(leftDiff))[0];
-                    double rightSqrSum = cv::sum(rightDiff.mul(rightDiff))[0];
-                    double denominator = sqrt(leftSqrSum * rightSqrSum);
-                    float ncc = (denominator == 0) ? 0 : numerator / denominator;
-
-                    if (ncc > maxNCC) {
-                        maxNCC = ncc;
-                        bestDisparity = d;
-                    }
-                }
-                disparity_.at<float>(y, x) = static_cast<float>(bestDisparity);
-            }
-        }
-        };
-
-    std::vector<std::thread> threads;
-    int rowsPerThread = left_image_.rows / numThreads;
-    for (int i = 0; i < numThreads; ++i) {
-        int yStart = i * rowsPerThread;
-        int yEnd = (i == numThreads - 1) ? left_image_.rows : (i + 1) * rowsPerThread;
-        threads.emplace_back(computeNCCForRow, yStart, yEnd);
-    }
-
-    for (auto& t : threads) {
-        t.join();
-    }
-}
-
-void DisparityMapGenerator::computeRG() {
-    const int windowSize = 5;
-    int halfWindow = windowSize / 2;
-    int maxDisparity = 30;
-    cv::Mat disparityMap = cv::Mat::zeros(left_image_.size(), CV_32F);
-    cv::Mat visited = cv::Mat::zeros(left_image_.size(), CV_8U);
-
-    auto computeDisparityAt = [&](int y, int x) -> float {
-        float maxNCC = -1.0;
-        int bestDisparity = 0;
-
-        if (x - halfWindow < 0 || x + halfWindow >= left_image_.cols || y - halfWindow < 0 || y + halfWindow >= left_image_.rows) {
-            return -1.0;
-        }
-
-        cv::Rect leftRect(x - halfWindow, y - halfWindow, windowSize, windowSize);
-        cv::Mat leftPatch = left_image_(leftRect);
-        double leftMean = cv::mean(leftPatch)[0];
-
-        for (int d = 0; d <= maxDisparity; ++d) {
-            int rightX = x - d;
-            if (rightX < halfWindow) break;
-
-            cv::Rect rightRect(rightX - halfWindow, y - halfWindow, windowSize, windowSize);
-            cv::Mat rightPatch = right_image_(rightRect);
-            double rightMean = cv::mean(rightPatch)[0];
-
-            cv::Mat leftDiff = leftPatch - leftMean;
-            cv::Mat rightDiff = rightPatch - rightMean;
-
-            double numerator = cv::sum(leftDiff.mul(rightDiff))[0];
-            double leftSqrSum = cv::sum(leftDiff.mul(leftDiff))[0];
-            double rightSqrSum = cv::sum(rightDiff.mul(rightDiff))[0];
-            double denominator = sqrt(leftSqrSum * rightSqrSum);
-            float ncc = (denominator == 0) ? 0 : numerator / denominator;
-
-            if (ncc > maxNCC) {
-                maxNCC = ncc;
-                bestDisparity = d;
-            }
-        }
-
-        return bestDisparity;
-        };
-
-    std::queue<cv::Point> seeds;
-    for (int y = halfWindow; y < left_image_.rows - halfWindow; y += windowSize) {
-        for (int x = halfWindow; x < left_image_.cols - halfWindow; x += windowSize) {
-            float disparity = computeDisparityAt(y, x);
-            if (disparity >= 0) {
-                seeds.push(cv::Point(x, y));
-                disparityMap.at<float>(y, x) = disparity;
-                visited.at<uchar>(y, x) = 1;
-            }
-        }
-    }
-
-    int dx[8] = { 1, -1, 0, 0, 1, 1, -1, -1 };
-    int dy[8] = { 0, 0, 1, -1, 1, -1, 1, -1 };
-
-    while (!seeds.empty()) {
-        cv::Point p = seeds.front();
-        seeds.pop();
-
-        for (int i = 0; i < 8; ++i) {
-            int nx = p.x + dx[i];
-            int ny = p.y + dy[i];
-
-            if (nx >= halfWindow && nx < left_image_.cols - halfWindow &&
-                ny >= halfWindow && ny < left_image_.rows - halfWindow &&
-                !visited.at<uchar>(ny, nx)) {
-
-                float disparity = computeDisparityAt(ny, nx);
-                if (disparity >= 0) {
-                    disparityMap.at<float>(ny, nx) = disparity;
-                    visited.at<uchar>(ny, nx) = 1;
-                    seeds.push(cv::Point(nx, ny));
-                }
-            }
-        }
-    }
-
-    disparity_ = disparityMap;
 }
 
 void DisparityMapGenerator::computeSGM() {
@@ -472,31 +356,98 @@ void DisparityMapGenerator::applyLRCheck() {
     }
 }
 
+float DisparityMapGenerator::computeCost(int x, int y, float d) {
+    int xr = x - static_cast<int>(std::round(d));  // 使用四舍五入将浮点数转换为整数
+    if (xr < 0 || xr >= right_image_.cols) {
+        return std::numeric_limits<float>::max(); // 超出图像边界的高代价
+    }
+    return std::abs(static_cast<float>(left_image_.at<uchar>(y, x)) - static_cast<float>(right_image_.at<uchar>(y, xr)));
+}
+
 void DisparityMapGenerator::enhanceSubpixel() {
+    // 确保视差图被转换为 CV_32F 类型
+    if (disparity_.type() != CV_32F) {
+        disparity_.convertTo(disparity_, CV_32F);
+    }
+
     const int width = disparity_.cols;
     const int height = disparity_.rows;
 
+    // 创建一个新的矩阵用于存储增强后的视差
+    cv::Mat enhancedDisparity = disparity_.clone();
+
     for (int y = 1; y < height - 1; ++y) {
         for (int x = 1; x < width - 1; ++x) {
-            int16_t d = disparity_.at<int16_t>(y, x);
+            float d = disparity_.at<float>(y, x);
             if (d < 0) continue; // 跳过无效视差
 
-            float c1 = computeCost(x, y, d - 1);
+            // 计算左右相邻视差的代价
+            float c1 = computeCost(x, y, d - 1.0f);
             float c2 = computeCost(x, y, d);
-            float c3 = computeCost(x, y, d + 1);
+            float c3 = computeCost(x, y, d + 1.0f);
 
+            // 计算分母
             float denominator = c1 - 2 * c2 + c3;
-            if (denominator != 0) {
+            if (std::abs(denominator) > std::numeric_limits<float>::epsilon()) {
+                // 计算亚像素校正
                 float delta = (c1 - c3) / (2 * denominator);
-                disparity_.at<int16_t>(y, x) = d + delta;
+                enhancedDisparity.at<float>(y, x) = d + delta;
             }
         }
     }
+
+    // 更新视差图
+    disparity_ = enhancedDisparity;
 }
 
-float DisparityMapGenerator::computeCost(int x, int y, float d) {
-    if (x - d < 0 || x - d >= left_image_.cols) {
-        return std::numeric_limits<float>::max(); // 超出图像边界的高代价
+// 重建右图像
+cv::Mat DisparityMapGenerator::reconstructRightImage(const cv::Mat& leftImage, const cv::Mat& disparity) {
+    // 检查视差图是否为空
+    if (disparity_.empty()) {
+        std::cerr << "Disparity map is empty!" << std::endl;
+        return cv::Mat();
     }
-    return std::abs(left_image_.at<uchar>(y, x) - right_image_.at<uchar>(y, x - static_cast<int>(d)));
+
+    // 确保视差图为 CV_32F 类型
+    cv::Mat disparity32F;
+    if (disparity_.type() != CV_32F) {
+        std::cerr << "Converting disparity to CV_32F" << std::endl;
+        disparity_.convertTo(disparity32F, CV_32F);
+    }
+    else {
+        disparity32F = disparity_;
+    }
+
+    // 调试信息
+    std::cout << "Disparity type: " << disparity32F.type() << " (Expected: " << CV_32F << ")" << std::endl;
+    std::cout << "Disparity size: " << disparity32F.size() << std::endl;
+
+    cv::Mat rightImage = cv::Mat::zeros(leftImage.size(), leftImage.type());
+
+    for (int y = 0; y < leftImage.rows; ++y) {
+        for (int x = 0; x < leftImage.cols; ++x) {
+            float d = disparity32F.at<float>(y, x);
+            int xr = static_cast<int>(x - d + 0.5f); // 使用四舍五入到最近的整数
+            if (xr >= 0 && xr < leftImage.cols) {
+                rightImage.at<uchar>(y, xr) = leftImage.at<uchar>(y, x);
+            }
+        }
+    }
+
+    return rightImage;
+}
+
+// 计算光度一致性的均方误差
+double DisparityMapGenerator::computePhotometricConsistencyMSE(const cv::Mat& reconstructedRightImage, const cv::Mat& actualRightImage) {
+    cv::Mat diff;
+    cv::absdiff(reconstructedRightImage, actualRightImage, diff);
+    diff = diff.mul(diff);
+    return cv::mean(diff)[0];
+}
+
+// 计算光度一致性的平均绝对误差
+double DisparityMapGenerator::computePhotometricConsistencyMAE(const cv::Mat& reconstructedRightImage, const cv::Mat& actualRightImage) {
+    cv::Mat diff;
+    cv::absdiff(reconstructedRightImage, actualRightImage, diff);
+    return cv::mean(diff)[0];
 }

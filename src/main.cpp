@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     int width = 1280;
     int height = 720;
     bool enable_debug = true;
-    DisparityMapGenerator::DisparityMethod method = DisparityMapGenerator::SGBM;
+    DisparityMapGenerator::DisparityMethod method = DisparityMapGenerator::SGM;
 
     if (argc > 1)
     {

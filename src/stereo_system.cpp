@@ -180,7 +180,13 @@ void StereoSystem::run()
         // cv::imwrite("../test_imgs/rectified_right.png", rect_right);
 
         DisparityMapGenerator disparity_map_generator(rect_left, rect_right, this->method);
+        // 开始计时
+        int64 start = cv::getTickCount();
         disparity_map_generator.computeDisparity(disparity_map);
+        // 结束计时
+        int64 end = cv::getTickCount();
+        double duration = (end - start) / cv::getTickFrequency(); // 计算BM算法的运行时间（秒）
+		std::cout << "算法的运行时间为：" << duration << "秒" << std::endl;
         disparity_map_generator.displayDisparity();
 
         computeDepthMap(disparity_map, depth_map);

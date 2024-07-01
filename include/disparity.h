@@ -19,7 +19,6 @@ public:
         GC,
         BP,
         SGM,
-        FBS
     };
     DisparityMapGenerator(const cv::Mat& leftImage, const cv::Mat& rightImage, DisparityMethod method);
     void computeDisparity(cv::Mat &disparity);
@@ -36,13 +35,14 @@ private:
     DisparityMethod method_;
     void computeBM();
     void computeSGBM();
-    void computeNCC();
     void computeSGM();
-    void computeRG();
     void preprocessImage(cv::Mat& image, bool useGaussianBlur = true);
     void applyLRCheck();
     void enhanceSubpixel();
     float computeCost(int x, int y, float d);
+    cv::Mat reconstructRightImage(const cv::Mat& leftImage, const cv::Mat& disparity);
+    double computePhotometricConsistencyMSE(const cv::Mat& reconstructedRightImage, const cv::Mat& actualRightImage);
+    double computePhotometricConsistencyMAE(const cv::Mat& reconstructedRightImage, const cv::Mat& actualRightImage);
     // 其他方法可以根据需要添加
 };
 
