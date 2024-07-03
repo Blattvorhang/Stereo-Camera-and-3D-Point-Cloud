@@ -18,7 +18,7 @@ DisparityMapGenerator::DisparityMapGenerator(const cv::Mat& leftImage, const cv:
 void DisparityMapGenerator::preprocessImage(cv::Mat& image, bool useGaussianBlur) {
 
     // 调整图像大小
-    cv::resize(image, image, cv::Size((int)image.cols / 2, (int)image.rows / 2));
+    //cv::resize(image, image, cv::Size((int)image.cols / 2, (int)image.rows / 2));
 
     // 将图像转换为灰度图
     if (image.channels() > 1) {
@@ -181,13 +181,8 @@ void DisparityMapGenerator::computeBM() {
     int blockSize = 15;
 
     cv::Ptr<cv::StereoBM> stereoBM = cv::StereoBM::create(numDisparities, blockSize);
-    cv::Mat disparity16S;
-    stereoBM->compute(left_image_, right_image_, disparity16S);
+    stereoBM->compute(left_image_, right_image_, disparity_);
 
-    // 将视差图转换为浮点数类型
-    cv::Mat disparity32F;
-    disparity16S.convertTo(disparity32F, CV_32F, 1.0 / 16.0);
-    disparity_ = disparity32F;
 }
 
 void DisparityMapGenerator::computeSGBM() {

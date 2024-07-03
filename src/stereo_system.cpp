@@ -165,8 +165,8 @@ void StereoSystem::run()
             rectifyImages(ori_left, ori_right, rect_left, rect_right);
         } else { 
             // Load images from file.
-            rect_left = cv::imread("../test_imgs/rectified_left.png");
-            rect_right = cv::imread("../test_imgs/rectified_right.png");
+            rect_left = cv::imread("../test_imgs/im2.png");
+            rect_right = cv::imread("../test_imgs/im6.png");
             // rect_left = cv::imread("../test_imgs/im2.png");
             // rect_right = cv::imread("../test_imgs/im6.png");
         }
