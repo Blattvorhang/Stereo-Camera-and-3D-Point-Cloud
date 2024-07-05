@@ -3,6 +3,8 @@
 
 #include <string>
 #include <opencv2/opencv.hpp>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include "../include/camera.h"
 #include "../include/disparity.h"
 
@@ -30,8 +32,10 @@ public:
 
     void rectifyImages(const cv::Mat &left_image, const cv::Mat &right_image,
                        cv::Mat &rectified_left_image, cv::Mat &rectified_right_image);
-
     void computeDepthMap(const cv::Mat &disparity, cv::Mat &depth_map);
+    
+    void createPointCloud(const cv::Mat& _3dImage, const cv::Mat& colorImage,
+                          pcl::PointCloud<pcl::PointXYZRGB>::Ptr &pointCloud);
 
 private:
     /// @brief Checks if the matrix has the expected size.

@@ -88,6 +88,12 @@ classDiagram
 ```
 
 ## References
+- [HBVCAM-W202011HD V33](https://detail.1688.com/offer/753903056520.html)
+- [Open Stereo Camera with OpenCV](https://zhaoxuhui.top/blog/2018/12/03/OpenSteroCameraWithOpenCV.html)
 - [Stereo Camera Calibration (from MATLAB to OpenCV)](https://zhuanlan.zhihu.com/p/153329285)
 - [Stereo Camera Calibration](https://www.cnblogs.com/champrin/p/17034043.html)
 - [Depth Map in Stereo Matching](https://www.cnblogs.com/riddick/p/8486223.html)
+- [cv::reprojectTo3D](https://blog.csdn.net/Gordon_Wei/article/details/86319058)
+- [PCL Segmentation Fault](https://blog.csdn.net/weixin_45802055/article/details/131194547)
+- [Middlebury Dataset](https://vision.middlebury.edu/stereo/data/)
+- [Challenges of Stereo Matching](https://blog.csdn.net/He3he3he/article/details/101148558)

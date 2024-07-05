@@ -89,8 +89,26 @@ bool SemiGlobalMatching::Initialize(const int32_t& width, const int32_t& height,
 void SemiGlobalMatching::Release()
 {
     // 释放内存
-    SAFE_DELETE(census_left_);
-    SAFE_DELETE(census_right_);
+    if (option_.census_size == Census5x5) {
+        if(census_left_) {
+            delete[] static_cast<uint32_t*>(census_left_);
+            census_left_ = nullptr;
+        }
+        if(census_right_) {
+            delete[] static_cast<uint32_t*>(census_right_);
+            census_right_ = nullptr;
+        }
+    }
+    else {
+        if(census_left_) {
+            delete[] static_cast<uint64_t*>(census_left_);
+            census_left_ = nullptr;
+        }
+        if(census_right_) {
+            delete[] static_cast<uint64_t*>(census_right_);
+            census_right_ = nullptr;
+        }
+    }
     SAFE_DELETE(cost_init_);
     SAFE_DELETE(cost_aggr_);
     SAFE_DELETE(cost_aggr_1_);

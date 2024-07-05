@@ -19,7 +19,7 @@ void DisparityMapGenerator::preprocessImage(cv::Mat& image, bool useGaussianBlur
     }
 
     // 调整图像大小到640x360（或你认为合适的大小）
-    cv::resize(image, image, cv::Size(640, 360));
+    cv::resize(image, image, cv::Size(), 0.5, 0.5);
 
     // 应用高斯模糊以减少图像噪声（如果启用）
     if (useGaussianBlur) {

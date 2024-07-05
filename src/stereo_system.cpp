@@ -1,6 +1,11 @@
 ﻿#include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <chrono>
+#include <thread>
 #include <iostream>
 #include "../include/stereo_system.h"
 #include "../include/disparity.h"
@@ -133,6 +138,35 @@ void StereoSystem::computeDepthMap(const cv::Mat &disparity, cv::Mat &depth_map)
     depth_map.setTo(0, disparity < 0);
 }
 
+void StereoSystem::createPointCloud(const cv::Mat& _3dImage, const cv::Mat& colorImage,
+                                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr &pointCloud)
+{
+    pointCloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pointCloud->points.resize(_3dImage.total());
+
+    for (int i = 0; i < _3dImage.rows; ++i)
+    {
+        for (int j = 0; j < _3dImage.cols; ++j)
+        {
+            const cv::Vec3f& point = _3dImage.at<cv::Vec3f>(i, j);
+            
+            if (point[2] > 0)
+            {
+                pointCloud->points[i * _3dImage.cols + j].x = point[0];
+                pointCloud->points[i * _3dImage.cols + j].y = point[1];
+                pointCloud->points[i * _3dImage.cols + j].z = point[2];
+                pointCloud->points[i * _3dImage.cols + j].r = colorImage.at<cv::Vec3b>(i, j)[2];
+                pointCloud->points[i * _3dImage.cols + j].g = colorImage.at<cv::Vec3b>(i, j)[1];
+                pointCloud->points[i * _3dImage.cols + j].b = colorImage.at<cv::Vec3b>(i, j)[0];
+            }
+        }
+    }
+
+    pointCloud->width = _3dImage.cols;
+    pointCloud->height = _3dImage.rows;
+    pointCloud->is_dense = false;
+}
+
 void StereoSystem::run()
 {
     // Open video stream from camera.
@@ -191,6 +225,33 @@ void StereoSystem::run()
         depth_map.convertTo(depth_map_8u, CV_8U, 255.0 / max_depth);
         // cv::normalize(depth_map_8u, depth_map_normalized, 0.0, 255.0, cv::NORM_MINMAX, CV_8U);
         cv::imshow("Depth Map", depth_map_8u);
+
+        cv::Mat _3dImage;
+        cv::Mat colorImage;
+
+        cv::resize(rect_left, colorImage, cv::Size(), 0.5, 0.5);
+        cv::reprojectImageTo3D(disparity_map, _3dImage, Q_, true);
+
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+        createPointCloud(_3dImage, colorImage, pointCloud);
+
+        if (pointCloud->points.size() > 0)
+        {
+            std::cout << "Point cloud size: " << pointCloud->points.size() << std::endl;
+        }
+        else
+        {
+            std::cout << "Point cloud is empty." << std::endl;
+        }
+
+        // Show the point cloud.
+        /*pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
+        viewer->setBackgroundColor(204 / 255.0, 204 / 255.0, 204 / 255.0);  // Light gray
+        viewer->addPointCloud<pcl::PointXYZRGB>(pointCloud, "point cloud");
+        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "point cloud");
+        viewer->addCoordinateSystem(1.0);
+        viewer->initCameraParameters();
+        viewer->setCameraPosition(0, 0, 0, 0, 0, 1, 0, -1, 0);*/
         
         // Show additional debug/educational figures.
         if (enable_debug_)
@@ -205,6 +266,11 @@ void StereoSystem::run()
                 cv::imshow("Original Right", ori_right);
             }
         }
+
+        /*while (!viewer->wasStopped()) {
+            viewer->spinOnce(100);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }*/
 
         if (cv::waitKey(30) == 27) // Break on ESC
         {

@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
     int width = 1280;
     int height = 720;
     bool enable_debug = true;
+    DisparityMapGenerator::DisparityMethod method = DisparityMapGenerator::SGBM;
 
     if (argc > 1)
     {
@@ -64,7 +65,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        StereoSystem stereo_system(param_path, camera_id, width, height,DisparityMapGenerator::SGBM, enable_debug);
+        StereoSystem stereo_system(param_path, camera_id, width, height, method, enable_debug);
         stereo_system.run();
     }
     catch (const std::exception &e)
