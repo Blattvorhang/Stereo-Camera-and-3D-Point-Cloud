@@ -59,10 +59,16 @@ Calculate depth from disparity with `cv::reprojectImageTo3D()`
 ```mermaid
 classDiagram
     class Camera {
-        -Eigen::Matrix3f intrinsicMatrix
-        -Eigen::Matrix4f extrinsicMatrix
-        -cv::Mat distortionCoeffs
-        +cv::Mat captureImage()
+        +Camera();
+        +cv::Mat getIntrinsicMatrix() const;
+        +cv::Mat getDistortionCoeffs() const;
+        +cv::Mat getProjectionMatrix() const;
+        +void setRectificationMatrices(const cv::Mat &R, const cv::Mat &P);
+        -cv::Mat K_;
+        -cv::Mat distortion_coeffs_;
+        -cv::Mat projection_matrix_;
+        -cv::Mat rectified_R_;
+        -cv::Mat rectified_P_;
     }
 
     class StereoSystem {
@@ -81,10 +87,73 @@ classDiagram
 
     class DisparityMapGenerator {
         +cv::Mat computeDisparity(cv::Mat leftImage, cv::Mat rightImage, DisparityMethod method)
+        +enum DisparityMethod;
+        +DisparityMapGenerator(const cv::Mat& leftImage, const cv::Mat& rightImage, DisparityMethod method);
+        +void computeDisparity(cv::Mat &disparity);
+        +void displayDisparity();
+        +void displayLRCheckResult();
+        -cv::Mat left_image_;
+        -cv::Mat right_image_;
+        -cv::Mat disparity_;
+        -cv::Mat right_disparity_;
+        -cv::Mat lrCheckedDisparity_;
+        -int numDisparities_;
+        -DisparityMethod method_;
+        -void computeBM();
+        -void computeSGBM();
+        -void computeSGM();
+        -void preprocessImage(cv::Mat& image, bool useGaussianBlur = true);
+        -void applyLRCheck();
+        -void enhanceSubpixel();
+        -float computeCost(int x, int y, float d);
+        -cv::Mat reconstructRightImage(const cv::Mat& leftImage, const cv::Mat& disparity);
+        -double computePhotometricConsistencyMSE(const cv::Mat& reconstructedRightImage, const cv::Mat& actualRightImage);
+        -double computePhotometricConsistencyMAE(const cv::Mat& reconstructedRightImage, const cv::Mat& actualRightImage);
+    }
+
+    class SemiGlobalMatching {
+        +enum CensusSize;
+        +struct SGMOption;
+        +bool Initialize(const int32_t& width, const int32_t& height, const SGMOption& option);
+        +bool Match(const uint8_t* img_left, const uint8_t* img_right, float* disp_left);
+        +bool Reset(const uint32_t& width, const uint32_t& height, const SGMOption& option);
+        -cv::Mat left_image_;
+        -cv::Mat right_image_;
+        -cv::Mat disparity_;
+        -cv::Mat right_disparity_;
+        -cv::Mat lrCheckedDisparity_;
+        -int numDisparities_;
+        -DisparityMethod method_;
+        -void computeBM();
+        -void computeSGBM();
+        -void computeSGM();
+        -void preprocessImage(cv::Mat& image, bool useGaussianBlur = true);
+        -void applyLRCheck();
+        -void enhanceSubpixel();
+        -float computeCost(int x, int y, float d);
+        -cv::Mat reconstructRightImage(const cv::Mat& leftImage, const cv::Mat& disparity);
+        -double computePhotometricConsistencyMSE(const cv::Mat& reconstructedRightImage, const cv::Mat& actualRightImage);
+        -double computePhotometricConsistencyMAE(const cv::Mat& reconstructedRightImage, const cv::Mat& actualRightImage);
+    }
+
+    class sgm_util {
+        +void census_transform_5x5(const uint8_t* source, uint32_t* census, const int32_t& width, const int32_t& height);
+        +void census_transform_9x7(const uint8_t* source, uint64_t* census, const int32_t& width, const int32_t& height);
+        +uint8_t Hamming32(const uint32_t& x, const uint32_t& y);
+        +uint8_t Hamming64(const uint64_t& x, const uint64_t& y);
+        +void CostAggregateLeftRight(const uint8_t* img_data, const int32_t& width, const int32_t& height, const int32_t& min_disparity, const int32_t& max_disparity,const int32_t& p1,const int32_t& p2_init, const uint8_t* cost_init, uint8_t* cost_aggr, bool is_forward = true);
+        +void CostAggregateUpDown(const uint8_t* img_data, const int32_t& width, const int32_t& height, const int32_t& min_disparity, const int32_t& max_disparity,const int32_t& p1, const int32_t& p2_init, const uint8_t* cost_init, uint8_t* cost_aggr, bool is_forward = true);
+        +void CostAggregateDagonal_1(const uint8_t* img_data, const int32_t& width, const int32_t& height, const int32_t& min_disparity, const int32_t& max_disparity,const int32_t& p1, const int32_t& p2_init, const uint8_t* cost_init, uint8_t* cost_aggr, bool is_forward = true);
+        +void CostAggregateDagonal_2(const uint8_t* img_data, const int32_t& width, const int32_t& height, const int32_t& min_disparity, const int32_t& max_disparity,const int32_t& p1, const int32_t& p2_init, const uint8_t* cost_init, uint8_t* cost_aggr, bool is_forward = true);
+        +void MedianFilter(const float* in, float* out, const int32_t& width, const int32_t& height, const int32_t wnd_size);
+        +void RemoveSpeckles(float* disparity_map, const int32_t& width, const int32_t& height, const int32_t& diff_insame,const uint32_t& min_speckle_aera, const float& invalid_val);
     }
 
     StereoSystem --> Camera
     StereoSystem --> DisparityMapGenerator
+    DisparityMapGenerator --> SemiGlobalMatching
+    DisparityMapGenerator --> SemiGlobalMatching
+    SemiGlobalMatching --> sgm_util
 ```
 
 ## References
