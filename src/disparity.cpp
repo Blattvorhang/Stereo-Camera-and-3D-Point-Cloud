@@ -18,7 +18,7 @@ DisparityMapGenerator::DisparityMapGenerator(const cv::Mat& leftImage, const cv:
 void DisparityMapGenerator::preprocessImage(cv::Mat& image, bool useGaussianBlur) {
 
     // 调整图像大小
-    //cv::resize(image, image, cv::Size((int)image.cols / 2, (int)image.rows / 2));
+    cv::resize(image, image, cv::Size(), 0.5, 0.5);
 
     // 将图像转换为灰度图
     if (image.channels() > 1) {

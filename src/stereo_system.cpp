@@ -199,10 +199,10 @@ void StereoSystem::run()
             rectifyImages(ori_left, ori_right, rect_left, rect_right);
         } else { 
             // Load images from file.
-            rect_left = cv::imread("../test_imgs/im2.png");
-            rect_right = cv::imread("../test_imgs/im6.png");
             // rect_left = cv::imread("../test_imgs/im2.png");
             // rect_right = cv::imread("../test_imgs/im6.png");
+            rect_left = cv::imread("../test_imgs/rectified_left.png");
+            rect_right = cv::imread("../test_imgs/rectified_right.png");
         }
 
         // Show rectified images.
@@ -263,13 +263,33 @@ void StereoSystem::run()
         if (enable_debug_)
         {
             // if (!frame.empty())      { cv::imshow("Original", frame); }
-            if (!ori_left.empty())
+            if (!ori_left.empty() && !ori_right.empty())
             {
-                cv::imshow("Original Left", ori_left);
+                // Combine the original images side by side.
+                cv::Mat ori_combined;
+                cv::hconcat(ori_left, ori_right, ori_combined);
+
+                // Draw horizontal lines on the original images. 
+                for (int i = 50; i < ori_combined.rows - 1; i += 50)
+                {
+                    cv::line(ori_combined, cv::Point(0, i), cv::Point(ori_combined.cols, i), cv::Scalar(0, 0, 255), 1);
+                }
+
+                cv::imshow("Horizontal Lines (Original)", ori_combined);
             }
-            if (!ori_right.empty())
+            if (!rect_left.empty() && !rect_right.empty())
             {
-                cv::imshow("Original Right", ori_right);
+                // Combine the rectified images side by side.
+                cv::Mat rect_combined;
+                cv::hconcat(rect_left, rect_right, rect_combined);
+
+                // Draw horizontal lines on the rectified images.
+                for (int i = 50; i < rect_combined.rows - 1; i += 50)
+                {
+                    cv::line(rect_combined, cv::Point(0, i), cv::Point(rect_combined.cols, i), cv::Scalar(0, 0, 255), 1);
+                }
+
+                cv::imshow("Horizontal Lines (Rectified)", rect_combined);
             }
         }
 
